@@ -1,0 +1,45 @@
+{% extends 'library/base.html' %}
+{% load markdown_format %}
+{% block title %}О нас - {{ info.name }}{% endblock %}
+
+{% block content %}
+<h1>О нашей библиотеке</h1>
+
+<div style="background: white; padding: 30px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(62,39,35,0.05);">
+    <h2 style="color: #6d4c41; margin-top: 0;">{{ info.name }}</h2>
+
+    <!-- Основное описание с сохранением абзацев -->
+    <div style="line-height: 1.8; color: #4e342e; font-size: 1.1rem; margin-bottom: 30px;">
+        {# Фильтр linebreaks преобразует переносы строк в абзацы автоматически #}
+        {{ info.description|markdown  }}
+    </div>
+
+    <!-- Блок электронного сервиса и статистики -->
+    <div style="margin-top: 40px; padding: 25px; background: #fdfbf7; border: 1px solid #efebe9; border-radius: 12px; border-left: 5px solid #8d6e63;">
+        <h3 style="margin-top: 0;">💻 Электронный сервис библиотеки</h3>
+        <p style="color: #5d4037; line-height: 1.6;">
+            Наш сайт позволяет читателям <strong>бронировать книги онлайн</strong>.
+            Выберите книгу в каталоге, нажмите кнопку «Забронировать», и мы подготовим её к вашему приходу.
+            Бронь действует 3 дня.
+        </p>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 25px;">
+            <!-- Карточка 1 -->
+            <div style="flex: 1; min-width: 150px; background: white; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #efebe9;">
+                <div style="font-size: 2rem; font-weight: bold; color: #6d4c41;">{{ stats.total_books }}</div>
+                <div style="font-size: 0.85rem; color: #8d6e63; text-transform: uppercase;">Книг в фонде</div>
+            </div>
+            <!-- Карточка 2 -->
+            <div style="flex: 1; min-width: 150px; background: white; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #efebe9;">
+                <div style="font-size: 2rem; font-weight: bold; color: #d84315;">{{ stats.active_bookings }}</div>
+                <div style="font-size: 0.85rem; color: #8d6e63; text-transform: uppercase;">Активных заявок</div>
+            </div>
+            <!-- Карточка 3 -->
+            <div style="flex: 1; min-width: 150px; background: white; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #efebe9;">
+                <div style="font-size: 2rem; font-weight: bold; color: #558b2f;">{{ stats.completed_bookings }}</div>
+                <div style="font-size: 0.85rem; color: #8d6e63; text-transform: uppercase;">Книг уже выдано</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

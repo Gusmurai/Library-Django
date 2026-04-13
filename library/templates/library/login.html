@@ -1,0 +1,60 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Вход в библиотеку{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 30px auto; padding: 25px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(62,39,35,0.1); border: 1px solid #d7ccc8;">
+
+    <h2 style="text-align: center; color: #3e2723; margin-top: 0; margin-bottom: 20px; font-size: 1.5rem;">Вход в библиотеку</h2>
+
+    {% if form.errors %}
+        <div style="background-color: #ffebee; color: #c62828; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; border: 1px solid #ffcdd2; font-size: 0.9rem;">
+            Пожалуйста, введите правильный логин и пароль.
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'library:login' %}">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #5d4037; font-weight: 500; font-size: 0.95rem;">Логин:</label>
+
+            <input
+                type="text"
+                name="username"
+                required
+                autofocus
+                style="width: 100%; padding: 10px 12px; border: 1px solid #bcaaa4; border-radius: 4px; box-sizing: border-box; font-size: 1rem; background-color: #fff; color: #3e2723; outline: none; transition: border-color 0.3s;"
+                onfocus="this.style.borderColor='#8d6e63'; this.style.boxShadow='0 0 0 2px rgba(141, 110, 99, 0.2)'"
+                onblur="this.style.borderColor='#bcaaa4'; this.style.boxShadow='none'"
+            >
+        </div>
+
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; color: #5d4037; font-weight: 500; font-size: 0.95rem;">Пароль:</label>
+
+            <input
+                type="password"
+                name="password"
+                required
+                style="width: 100%; padding: 10px 12px; border: 1px solid #bcaaa4; border-radius: 4px; box-sizing: border-box; font-size: 1rem; background-color: #fff; color: #3e2723; outline: none; transition: border-color 0.3s;"
+                onfocus="this.style.borderColor='#8d6e63'; this.style.boxShadow='0 0 0 2px rgba(141, 110, 99, 0.2)'"
+                onblur="this.style.borderColor='#bcaaa4'; this.style.boxShadow='none'"
+            >
+        </div>
+
+
+        <button type="submit" style="width: 100%; background-color: #558b2f; color: white; padding: 10px; border: none; border-radius: 4px; font-size: 1.05rem; font-weight: 500; cursor: pointer; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#33691e'" onmouseout="this.style.backgroundColor='#558b2f'">
+            Войти
+        </button>
+    </form>
+
+    <!-- Информационный блок: уменьшили верхний отступ и размер шрифта -->
+    <div style="margin-top: 25px; padding: 15px; background-color: #efebe9; border-left: 4px solid #6d4c41; border-radius: 4px; font-size: 0.85rem; color: #4e342e; line-height: 1.4;">
+        <h4 style="margin-top: 0; margin-bottom: 8px; color: #3e2723; font-size: 1rem;">Как получить доступ?</h4>
+        <p style="margin-top: 0; margin-bottom: 8px;">Войти на сайт могут только авторизованные пользователи.</p>
+        <p style="margin: 0;">Пожалуйста, посетите нашу библиотеку для оформления читательского билета. После регистрации вы получите логин и пароль для доступа к личному кабинету и системе онлайн-бронирования.</p>
+    </div>
+</div>
+{% endblock %}

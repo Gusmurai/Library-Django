@@ -1,0 +1,31 @@
+{% extends 'library/base.html' %}
+{% load markdown_format %}
+{% block title %}Контакты - {{ info.name }}{% endblock %}
+
+{% block content %}
+<h1>Контактная информация</h1>
+
+<div style="display: flex; gap: 30px; flex-wrap: wrap;">
+    <!-- Инфо-блок -->
+    <div style="flex: 1; min-width: 300px; background: white; padding: 30px; border-radius: 8px; border: 1px solid #d7ccc8;">
+        <p style="font-size: 1.1rem;"><strong>📍 Адрес:</strong><br> {{ info.address }}</p>
+        <p style="font-size: 1.1rem;"><strong>📞 Телефон:</strong><br> {{ info.phone }}</p>
+        <p style="font-size: 1.1rem;"><strong>📧 Email:</strong><br> {{ info.email }}</p>
+        <p style="font-size: 1.1rem;">
+    <strong>⏰ Режим работы:</strong><br>
+    <span class="schedule-list">{{ info.schedule|markdown }}</span>
+</p>
+    </div>
+
+    <!-- Карта -->
+    <div style="flex: 2; min-width: 300px; border-radius: 8px; overflow: hidden; border: 1px solid #d7ccc8; height: 400px;">
+        {% if info.map_code %}
+            {{ info.map_code|safe }}
+        {% else %}
+            <div style="background: #eee; height: 100%; display: flex; align-items: center; justify-content: center; color: #999;">
+                Карта временно недоступна
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

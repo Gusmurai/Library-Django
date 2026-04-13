@@ -1,0 +1,12 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+    <h1>Личный кабинет</h1>
+    <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #d7ccc8;">
+        <p>Добро пожаловать, {{ user.first_name }} {{ user.last_name }}!</p>
+        <p>Ваша роль: {{ user.get_role_display }}</p>
+        <p>Здесь скоро появится ваша статистика и история бронирований.</p>
+    </div>
+{% endblock %}

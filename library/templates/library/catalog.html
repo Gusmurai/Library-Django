@@ -1,0 +1,62 @@
+{% extends 'library/base.html' %}
+
+{% block content %}
+<h1>Каталог книг</h1>
+
+<form method="GET" action="{% url 'library:catalog' %}" style="margin-bottom: 30px; display: flex; gap: 10px;">
+    <input type="text" name="q" placeholder="🔍 Поиск по названию или автору..." value="{{ request.GET.q }}" style="flex: 1;">
+    <button type="submit" class="btn-details">Найти</button>
+</form>
+
+<div class="book-grid">
+    {% for book in books %}
+    <div class="book-card">
+        <div class="book-image">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
+            {% else %}
+                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#8d6e63;">Нет обложки</div>
+            {% endif %}
+        </div>
+
+       <div class="book-info">
+            <h3 style="margin: 0 0 10px 0; color: #3e2723;">{{ book.title }}</h3>
+
+            {% if book.authors.all %}
+                <p style="margin: 0; color: #5d4037; font-size: 0.95rem;">
+                    {% for author in book.authors.all %}
+                        {{ author }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+            {% endif %}
+
+
+            {% if book.genres.all %}
+                <p class="genre" style="margin: 5px 0 15px 0; color: #8d6e63; font-style: italic; font-size: 0.9rem;">
+                    {% for genre in book.genres.all %}
+                        {{ genre.name }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+            {% endif %}
+
+            <div class="book-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+
+
+                {% if user.is_authenticated and user.role == 'reader' and not book.is_archived %}
+                    <form method="POST" action="{% url 'library:book_booking' book.id %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-booking">Забронировать</button>
+                    </form>
+                {% else %}
+
+                    <div></div>
+                {% endif %}
+
+
+                <a href="{% url 'library:book_detail' book.id %}" class="btn-details">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
