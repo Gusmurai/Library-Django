@@ -1,62 +1,335 @@
 {% extends 'library/base.html' %}
-
+{% block title %}Каталог книг{% endblock %}
 {% block content %}
 <h1>Каталог книг</h1>
 
-<form method="GET" action="{% url 'library:catalog' %}" style="margin-bottom: 30px; display: flex; gap: 10px;">
-    <input type="text" name="q" placeholder="🔍 Поиск по названию или автору..." value="{{ request.GET.q }}" style="flex: 1;">
-    <button type="submit" class="btn-details">Найти</button>
-</form>
 
-<div class="book-grid">
-    {% for book in books %}
-    <div class="book-card">
-        <div class="book-image">
-            {% if book.cover_image %}
-                <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
-            {% else %}
-                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#8d6e63;">Нет обложки</div>
-            {% endif %}
+<!-- === БЛОК ВКЛАДОК (ОБЪЕДИНЕННЫЙ) === -->
+<div style="display: flex; border-bottom: 2px solid #d7ccc8; margin-bottom: 25px; flex-wrap: wrap;">
+    <!-- Вкладка "Каталог" видна ВСЕМ всегда -->
+    <a href="?tab=books" style="padding: 10px 20px; text-decoration:none; {% if active_tab == 'books' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">📚 Каталог</a>
+
+    <!-- Вкладка "Избранное" только для ЧИТАТЕЛЯ -->
+    {% if user.role == 'reader' %}
+        <a href="?tab=favorites" style="padding: 10px 20px; text-decoration:none; {% if active_tab == 'favorites' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">⭐ Избранное</a>
+    {% endif %}
+
+    <!-- Вкладка "Архив" для Библиотекаря и Админа -->
+    {% if user.role == 'librarian' or user.role == 'admin' %}
+        <a href="?tab=archive" style="padding: 10px 20px; text-decoration:none; {% if active_tab == 'archive' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">❌ Архив списанных</a>
+    {% endif %}
+
+    <!-- Справочники только для БИБЛИОТЕКАРЯ -->
+    {% if user.role == 'librarian' %}
+        <a href="?tab=authors" style="padding: 10px 20px; text-decoration:none; {% if active_tab == 'authors' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">✍️ Авторы</a>
+        <a href="?tab=genres" style="padding: 10px 20px; text-decoration:none; {% if active_tab == 'genres' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">🔖 Жанры</a>
+        <a href="?tab=publishers" style="padding: 10px 20px; text-decoration:none; {% if active_tab == 'publishers' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">🏢 Издательства</a>
+    {% endif %}
+</div>
+
+<!-- ============================================== -->
+<!-- ВКЛАДКА: КНИГИ И АРХИВ -->
+<!-- ============================================== -->
+{% if active_tab == 'books' or active_tab == 'favorites' or active_tab == 'archive' %}
+
+    <!-- Кнопка добавления для библиотекаря -->
+    {% if user.role == 'librarian' and active_tab == 'books' %}
+        <div style="margin-bottom: 20px;">
+            <a href="{% url 'library:book_create' %}" class="btn-booking" style="background: #27ae60; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+                <span>➕</span> Добавить книгу
+            </a>
+        </div>
+    {% endif %}
+    <!-- Поиск (Твой код) -->
+    <form method="GET" action="{% url 'library:catalog' %}" style="margin-bottom: 30px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <input type="hidden" name="tab" value="{{ active_tab }}">
+        <input type="text" name="q" placeholder="🔍 Название или автор..." value="{{ request.GET.q|default:'' }}" style="flex: 3; height: 38px; padding: 0 15px; border: 1px solid #d7ccc8; border-radius: 4px;">
+        <select name="genre" style="flex: 1; height: 38px; border: 1px solid #d7ccc8; border-radius: 4px; background: white;">
+            <option value="">Все жанры</option>
+            {% for g in all_genres %}
+                <option value="{{ g.id }}" {% if request.GET.genre == g.id|stringformat:"i" %}selected{% endif %}>{{ g.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="issue_type" style="flex: 1; height: 38px; border: 1px solid #d7ccc8; border-radius: 4px; background: white;">
+            <option value="">Тип: Любой</option>
+            <option value="home" {% if request.GET.issue_type == 'home' %}selected{% endif %}>На дом/Читальный зал</option>
+            <option value="reading_room" {% if request.GET.issue_type == 'reading_room' %}selected{% endif %}>Читальный зал</option>
+        </select>
+        <button type="submit" class="btn-details" style="height: 38px; padding: 0 20px;">Найти</button>
+        {% if request.GET.q or request.GET.genre or request.GET.issue_type %}
+            <a href="{% url 'library:catalog' %}?tab={{ active_tab }}" class="btn-booking" style="text-decoration: none; height: 38px; line-height: 38px; padding: 0 20px; background-color: #8d6e63;">Сбросить</a>
+        {% endif %}
+    </form>
+
+    <div class="book-grid">
+        {% for book in books %}
+            <!-- КАРТОЧКА КНИГИ -->
+            <div class="book-card" style="position: relative; {% if book.is_archived %}opacity: 0.8; border: 1px dashed #999; background: #f9f9f9;{% endif %}">
+
+                <!-- 1. ИКОНКА ИЗБРАННОГО (ТОЛЬКО ДЛЯ ЧИТАТЕЛЯ) -->
+                {% if user.role == 'reader' and not book.is_archived %}
+                    <a href="{% url 'library:toggle_favorite' book.id %}"
+                       style="position: absolute; right: 10px; top: 10px; text-decoration: none; background: rgba(255,255,255,0.9); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"
+                       title="В избранное">
+                        {% if book.id in user_favorite_ids %}❤️{% else %}🤍{% endif %}
+                    </a>
+                {% endif %}
+                <div class="book-image">
+                    {% if book.cover_image %}<img src="{{ book.cover_image.url }}" alt="">{% else %}<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#8d6e63;">Нет обложки</div>{% endif %}
+                    {% if book.is_archived %}<div class="archive-badge" style="background:#7f8c8d">АРХИВ</div>{% endif %}
+                </div>
+
+                <div class="book-info">
+                    <h3 style="margin: 0 0 10px 0; color: #3e2723;">{{ book.title }}</h3>
+                    {% if book.authors.all %}
+                        <p style="margin: 0; color: #5d4037; font-size: 0.95rem;">{% for author in book.authors.all %}{{ author }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                    {% endif %}
+                    {% if book.genres.all %}
+                        <p class="genre" style="margin: 5px 0 15px 0; color: #8d6e63; font-style: italic; font-size: 0.9rem;">{% for genre in book.genres.all %}{{ genre.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                    {% endif %}
+
+                    <div class="book-footer">
+                        <!-- Бронирование (только читатель) -->
+                        {% if user.role == 'reader' and not book.is_archived %}
+                            <form method="POST" action="{% url 'library:book_booking' book.id %}" style="margin: 0; width: 100%;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-booking"
+                                        onclick="return confirm('{% if book.issue_type == 'reading_room' %}ВНИМАНИЕ: Книга только для читального зала. \n\n{% endif %}Подтвердить бронирование? \n\nБронь действует 3 дня после одобрения.');">
+                                    {% if book.issue_type == 'reading_room' %}Забронировать (чит. зал){% else %}Забронировать{% endif %}
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        <a href="{% url 'library:book_detail' book.id %}" class="btn-details">Подробнее</a>
+                    </div>
+                    <!-- КНОПКИ УПРАВЛЕНИЯ БИБЛИОТЕКАРЯ (Книга) -->
+                 <!-- КНОПКИ УПРАВЛЕНИЯ БИБЛИОТЕКАРЯ (Книга) -->
+{% if user.role == 'librarian' %}
+    <div style="margin-top: 15px; border-top: 1px solid #efebe9; padding-top: 10px; display: flex; gap: 8px; align-items: stretch;">
+
+        <!-- Кнопка Редактировать (теперь это ссылка, оформленная как кнопка) -->
+        <a href="{% url 'library:book_edit' book.id %}" class="btn-action"
+           style="background: #f39c12; flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0;">
+           ✎ Ред.
+        </a>
+
+        <!-- ФОРМА КНОПКИ АРХИВА -->
+        <form method="POST" action="{% url 'library:toggle_archive' book.id %}"
+              style="margin: 0; flex: 1; display: flex;"
+              onsubmit="return confirm('Вы уверены, что хотите изменить статус книги?');">
+            {% csrf_token %}
+            <button type="submit" class="btn-action"
+                    style="width: 100%; background: {% if book.is_archived %}#27ae60{% else %}#7f8c8d{% endif %}; display: flex; align-items: center; justify-content: center; height: 36px; padding: 0; border: none;">
+                {% if book.is_archived %}Вернуть{% else %}В архив{% endif %}
+            </button>
+        </form>
+
+    </div>
+{% endif %}
+
+                </div>
+            </div>
+        {% empty %}
+            <p style="grid-column: 1 / -1; text-align: center; color: #888; padding: 40px;">Книги не найдены.</p>
+        {% endfor %}
+    </div>
+
+<!-- ============================================== -->
+<!-- ВКЛАДКА: АВТОРЫ -->
+<!-- ============================================== -->
+{% elif active_tab == 'authors' %}
+    <div style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
+
+        <!-- Таблица существующих -->
+        <div style="flex: 2; min-width: 300px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8;">
+            <h3 style="margin-top: 0; color: #3e2723;">Справочник авторов</h3>
+
+             <form method="GET" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="hidden" name="tab" value="authors"> <!-- Важно: сохраняем вкладку -->
+                <input type="text" name="q_dict" placeholder="🔍 Поиск автора..."
+                       value="{{ q_dict }}" class="form-input" style="flex: 1; height: 38px;">
+                <button type="submit" class="btn-details" style="height: 38px;">Найти</button>
+                {% if q_dict %}
+                    <a href="?tab=authors" class="btn-booking" style="background:#8d6e63; text-decoration:none; height:38px; display:flex; align-items:center;">Сброс</a>
+                {% endif %}
+            </form>
+
+
+            <table class="bookings-table">
+                <thead><tr><th>ФИО</th><th>Дата рождения</th><th>Действия</th></tr></thead>
+                <tbody>
+                    {% for a in all_authors %}
+                    <tr>
+                        <td>{{ a.last_name }} {{ a.first_name }} {{ a.middle_name|default:'' }}</td>
+                        <td>{{ a.birth_date|date:"d.m.Y"|default:"—" }}</td>
+                        <td>
+                            <div style="display: flex; gap: 5px;">
+                                <a href="{% url 'library:edit_dict_item' 'author' a.id %}" class="btn-action" style="background:#f39c12; text-decoration:none;">✎</a>
+                                <form method="POST" action="{% url 'library:delete_dict_item' 'author' a.id %}" style="margin:0;" onsubmit="return confirm('Удалить автора?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action" style="background:#c0392b;">🗑</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                     {% empty %}
+                        <tr><td colspan="2" style="text-align:center; color:#999;">Ничего не найдено</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
-       <div class="book-info">
-            <h3 style="margin: 0 0 10px 0; color: #3e2723;">{{ book.title }}</h3>
+        <!-- Форма добавления (с валидацией) -->
+        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: #3e2723;">➕ Добавить автора</h3>
+            <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                {% csrf_token %}
+                <input type="hidden" name="add_author" value="1">
 
-            {% if book.authors.all %}
-                <p style="margin: 0; color: #5d4037; font-size: 0.95rem;">
-                    {% for author in book.authors.all %}
-                        {{ author }}{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                </p>
-            {% endif %}
+                {% for field in author_form %}
+                    <div>
+                        <label style="font-size: 0.9rem; color: #666;">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div style="color: #c62828; font-size: 0.8rem;">{{ field.errors.0 }}</div>{% endif %}
+                    </div>
+                {% endfor %}
 
-
-            {% if book.genres.all %}
-                <p class="genre" style="margin: 5px 0 15px 0; color: #8d6e63; font-style: italic; font-size: 0.9rem;">
-                    {% for genre in book.genres.all %}
-                        {{ genre.name }}{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                </p>
-            {% endif %}
-
-            <div class="book-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
-
-
-                {% if user.is_authenticated and user.role == 'reader' and not book.is_archived %}
-                    <form method="POST" action="{% url 'library:book_booking' book.id %}" style="margin: 0;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-booking">Забронировать</button>
-                    </form>
-                {% else %}
-
-                    <div></div>
+                <!-- Ошибка уникальности (если такой автор уже есть) -->
+                {% if author_form.non_field_errors %}
+                    <div style="color: #c62828; font-size: 0.85rem;">{{ author_form.non_field_errors.0 }}</div>
                 {% endif %}
 
-
-                <a href="{% url 'library:book_detail' book.id %}" class="btn-details">Подробнее</a>
-            </div>
+                <button type="submit" class="btn-booking" style="background:#27ae60; padding: 10px;">Сохранить</button>
+            </form>
         </div>
     </div>
-    {% endfor %}
-</div>
+
+<!-- ============================================== -->
+<!-- ВКЛАДКА: ЖАНРЫ -->
+<!-- ============================================== -->
+{% elif active_tab == 'genres' %}
+    <div style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 300px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8;">
+            <h3 style="margin-top: 0; color: #3e2723;">Справочник жанров</h3>
+            <!-- Форма динамической фильтрации жанров -->
+            <form method="GET" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="hidden" name="tab" value="genres">
+                <input type="text" name="q_dict" placeholder="🔍 Поиск жанра..."
+                       value="{{ q_dict }}" class="form-input" style="flex: 1; height: 38px;">
+                <button type="submit" class="btn-details" style="height: 38px; padding: 0 20px;">Найти</button>
+                {% if q_dict %}
+                    <a href="?tab=genres" class="btn-booking" style="background:#8d6e63; text-decoration:none; height:38px; display:flex; align-items:center; padding: 0 15px;">Сброс</a>
+                {% endif %}
+            </form>
+
+
+            <table class="bookings-table">
+                <thead><tr><th>Название жанра</th><th>Действия</th></tr></thead>
+                <tbody>
+                    {% for g in all_genres %}
+                    <tr>
+                        <td>{{ g.name }}</td>
+                        <td>
+                            <div style="display: flex; gap: 5px;">
+                                <a href="{% url 'library:edit_dict_item' 'genre' g.id %}" class="btn-action" style="background:#f39c12; text-decoration:none;">✎</a>
+                                <form method="POST" action="{% url 'library:delete_dict_item' 'genre' g.id %}" style="margin:0;" onsubmit="return confirm('Удалить жанр?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action" style="background:#c0392b;">🗑</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                        <tr><td colspan="2" style="text-align:center; color:#999; padding: 20px;">Жанры не найдены</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+       <!-- Форма добавления (без зеленой полосы) -->
+        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: #3e2723;">➕ Добавить жанр</h3>
+            <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                {% csrf_token %}
+                <input type="hidden" name="add_genre" value="1">
+
+                <div>
+                    <label style="font-size: 0.9rem; color: #666;">{{ genre_form.name.label }}</label>
+                    {{ genre_form.name }}
+                    {% if genre_form.name.errors %}<div style="color: #c62828; font-size: 0.8rem;">{{ genre_form.name.errors.0 }}</div>{% endif %}
+                </div>
+
+                <button type="submit" class="btn-booking" style="background:#27ae60; padding: 10px;">Сохранить</button>
+            </form>
+        </div>
+
+<!-- ============================================== -->
+<!-- ВКЛАДКА: ИЗДАТЕЛЬСТВА -->
+<!-- ============================================== -->
+{% elif active_tab == 'publishers' %}
+    <div style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 300px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8;">
+            <h3 style="margin-top: 0; color: #3e2723;">Справочник издательств</h3>
+
+ <!-- Форма динамической фильтрации издательств -->
+            <form method="GET" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="hidden" name="tab" value="publishers">
+                <input type="text" name="q_dict" placeholder="🔍 Поиск издательства..."
+                       value="{{ q_dict }}" class="form-input" style="flex: 1; height: 38px;">
+                <button type="submit" class="btn-details" style="height: 38px; padding: 0 20px;">Найти</button>
+                {% if q_dict %}
+                    <a href="?tab=publishers" class="btn-booking" style="background:#8d6e63; text-decoration:none; height:38px; display:flex; align-items:center; padding: 0 15px;">Сброс</a>
+                {% endif %}
+            </form>
+
+            <table class="bookings-table">
+                <thead><tr><th>Название издательства</th><th>Действия</th></tr></thead>
+                <tbody>
+                    {% for p in all_publishers %}
+                    <tr>
+                        <td>{{ p.name }}</td>
+                        <td>
+                            <div style="display: flex; gap: 5px;">
+                                <a href="{% url 'library:edit_dict_item' 'publisher' p.id %}" class="btn-action" style="background:#f39c12; text-decoration:none;">✎</a>
+                                <form method="POST" action="{% url 'library:delete_dict_item' 'publisher' p.id %}" style="margin:0;" onsubmit="return confirm('Удалить издательство?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action" style="background:#c0392b;">🗑</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                        <tr><td colspan="2" style="text-align:center; color:#999; padding: 20px;">Издательства не найдены</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+      <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: #3e2723;">➕ Добавить издательство</h3>
+            <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                {% csrf_token %}
+                <input type="hidden" name="add_publisher" value="1">
+
+                <div>
+                    <label style="font-size: 0.9rem; color: #666;">{{ publisher_form.name.label }}</label>
+                    {{ publisher_form.name }}
+                    {% if publisher_form.name.errors %}<div style="color: #c62828; font-size: 0.8rem;">{{ publisher_form.name.errors.0 }}</div>{% endif %}
+                </div>
+
+                <button type="submit" class="btn-booking" style="background:#27ae60; padding: 10px;">Сохранить</button>
+            </form>
+        </div>
+{% endif %}
+
+<style>
+    /* Стилизуем автосгенерированные поля Django */
+    form input[type="text"], form input[type="date"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d7ccc8;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+</style>
 {% endblock %}

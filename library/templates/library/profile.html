@@ -3,10 +3,301 @@
 {% block title %}Личный кабинет{% endblock %}
 
 {% block content %}
+<div class="profile-page">
     <h1>Личный кабинет</h1>
-    <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #d7ccc8;">
-        <p>Добро пожаловать, {{ user.first_name }} {{ user.last_name }}!</p>
-        <p>Ваша роль: {{ user.get_role_display }}</p>
-        <p>Здесь скоро появится ваша статистика и история бронирований.</p>
+
+    <!-- Вкладки (управляются через переменную active_tab) -->
+    <div style="display: flex; border-bottom: 2px solid #d7ccc8; margin-bottom: 30px;">
+        <button id="tab-dashboard" onclick="switchTab('dashboard')"
+                style="padding: 10px 20px; cursor:pointer; background:none; border:none;
+                {% if active_tab == 'dashboard' %}border-bottom: 3px solid #4e342e; font-weight:bold; color: #4e342e;{% else %}color:#8d6e63;{% endif %}">
+            📊 {% if user.role == 'reader' %}Мои книги{% else %}Рабочие показатели{% endif %}
+        </button>
+        <button id="tab-settings" onclick="switchTab('settings')"
+                style="padding: 10px 20px; cursor:pointer; background:none; border:none;
+                {% if active_tab == 'settings' %}border-bottom: 3px solid #4e342e; font-weight:bold; color: #4e342e;{% else %}color:#8d6e63;{% endif %}">
+            👤 Настройки профиля
+        </button>
     </div>
+
+    <!-- === ВКЛАДКА 1: ДАШБОРД === -->
+  <div id="content-dashboard" style="display: {% if active_tab == 'dashboard' %}block{% else %}none{% endif %};">
+    {% if user.role == 'admin' %}
+        <h2 style="margin-top: 0;">Статистика системы</h2>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+            <!-- 1. Пользователей (Синий) -->
+            <div style="flex: 1; min-width: 180px; background: #d6eaf8; padding: 20px; border-radius: 8px; text-align: center; color: #2980b9; border: 1px solid #aed6f1;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.total_users }}</h3><p style="color: #2980b9;">Пользователей</p>
+            </div>
+            <!-- 2. Книг (Зелёный) -->
+            <div style="flex: 1; min-width: 180px; background: #d5f5e3; padding: 20px; border-radius: 8px; text-align: center; color: #27ae60; border: 1px solid #abebc6;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.total_books }}</h3><p style="color: #27ae60;">Книг в каталоге</p>
+            </div>
+            <!-- 3. Активных (Жёлтый) -->
+            <div style="flex: 1; min-width: 180px; background: #fcf3cf; padding: 20px; border-radius: 8px; text-align: center; color: #f39c12; border: 1px solid #f9e79f;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.pending_bookings }}</h3><p style="color: #f39c12;">Активных заявок</p>
+            </div>
+            <!-- 4. Завершено (Фиолетовый) -->
+            <div style="flex: 1; min-width: 180px; background: #e8daef; padding: 20px; border-radius: 8px; text-align: center; color: #8e44ad; border: 1px solid #d2b4de;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.completed_bookings }}</h3><p style="color: #8e44ad;">Завершено заявок</p>
+            </div>
+            <!-- 5. Отклонены (Красный) -->
+            <div style="flex: 1; min-width: 180px; background: #fadbd8; padding: 20px; border-radius: 8px; text-align: center; color: #c0392b; border: 1px solid #f5b7b1;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.rejected_by_librarian }}</h3><p style="color: #c0392b;">Отклонены</p>
+            </div>
+            <!-- 6. Отменены читателем (Розовый) -->
+            <div style="flex: 1; min-width: 180px; background: #fce4ec; padding: 20px; border-radius: 8px; text-align: center; color: #c2185b; border: 1px solid #f8bbd0;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.cancelled_by_reader }}</h3><p style="color: #c2185b;">Отменены читателем</p>
+            </div>
+            <!-- 7. Истёкшие (Бирюзовый) -->
+            <div style="flex: 1; min-width: 180px; background: #e0f2f1; padding: 20px; border-radius: 8px; text-align: center; color: #00695c; border: 1px solid #b2dfdb;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.expired_bookings }}</h3><p style="color: #00695c;">Истёкшие заявки</p>
+            </div>
+            <!-- 8. Всего (Серый) -->
+            <div style="flex: 1; min-width: 180px; background: #e5e8e8; padding: 20px; border-radius: 8px; text-align: center; color: #5f6a6a; border: 1px solid #d5dbdb;">
+                <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.all_time_bookings }}</h3><p style="color: #5f6a6a;">Всего заявок</p>
+            </div>
+        </div>
+
+        {% elif user.role == 'librarian' %}
+            <h2 style="margin-top: 0;">Ваша эффективность работы с бронированием книг</h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+                <div style="flex: 1; min-width: 200px; background: #d4edda; padding: 20px; border-radius: 8px; text-align: center; color: #155724; border: 1px solid #c3e6cb;">
+                    <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.completed_by_me }}</h3>
+                    <p style="margin: 5px 0 0; font-size: 0.9rem;">Завершено вами</p>
+                </div>
+                <div style="flex: 1; min-width: 200px; background: #d1ecf1; padding: 20px; border-radius: 8px; text-align: center; color: #0c5460; border: 1px solid #bee5eb;">
+                    <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.approved_by_me }}</h3>
+                    <p style="margin: 5px 0 0; font-size: 0.9rem;">Одобрено вами</p>
+                </div>
+                <div style="flex: 1; min-width: 200px; background: #f8d7da; padding: 20px; border-radius: 8px; text-align: center; color: #721c24; border: 1px solid #f5c6cb;">
+                    <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.cancelled_by_me }}</h3>
+                    <p style="margin: 5px 0 0; font-size: 0.9rem;">Отменено вами</p>
+                </div>
+            </div>
+
+        {% else %}
+            <!-- Читатель -->
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+                <div style="flex: 1; min-width: 180px; background: #fff3cd; padding: 20px; border-radius: 8px; text-align: center; color: #856404;">
+                    <h3 style="margin: 0; font-size: 2rem;">{{ reader_stats.active }}</h3><p style="color: #856404;">Активные брони</p>
+                </div>
+                <div style="flex: 1; min-width: 180px; background: #d4edda; padding: 20px; border-radius: 8px; text-align: center; color: #155724;">
+                    <h3 style="margin: 0; font-size: 2rem;">{{ reader_stats.completed }}</h3><p style="color: #155724;">Завершённые брони</p>
+                </div>
+                <div style="flex: 1; min-width: 180px; background: #e2e3e5; padding: 20px; border-radius: 8px; text-align: center; color: #383d41;">
+                    <h3 style="margin: 0; font-size: 2rem;">{{ reader_stats.total }}</h3><p style="color: #383d41;">Всего заявок</p>
+                </div>
+            </div>
+
+             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0;">Ваши заявки</h2>
+            <!-- РАБОЧИЙ ФИЛЬТР -->
+            <form method="GET" style="margin: 0;">
+                <input type="hidden" name="tab" value="dashboard">
+                <select name="filter" onchange="this.form.submit()" class="form-input" style="width: 220px; height: 38px;">
+                    <option value="all" {% if filter_val == 'all' %}selected{% endif %}>Все заявки</option>
+                    <option value="active" {% if filter_val == 'active' %}selected{% endif %}>Ждут выдачи</option>
+                    <option value="completed" {% if filter_val == 'completed' %}selected{% endif %}>Завершены</option>
+                    <option value="rejected" {% if filter_val == 'rejected' %}selected{% endif %}>Отклонены</option>
+                    <option value="cancelled" {% if filter_val == 'cancelled' %}selected{% endif %}>Отменены вами</option>
+                    <option value="expired" {% if filter_val == 'expired' %}selected{% endif %}>Истек срок хранения</option>
+                </select>
+            </form>
+        </div>
+
+            <table class="bookings-table">
+    <thead>
+        <tr style="background: #f8f9fa;">
+            <th style="width: 150px;">Дата заявки</th>
+            <th>Книга</th>
+            <th>Статус / Комментарий</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for b in bookings %}
+        <tr>
+            <!-- 1. Дата заявки -->
+            <td style="text-align: center;"><strong>{{ b.booking_date|date:"d.m.Y" }}</strong></td>
+
+            <!-- 2. Книга (Фото побольше + ISBN) -->
+            <td>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <a href="{% url 'library:book_detail' b.book.id %}?next=profile">
+                            {% if b.book.cover_image %}
+                                <img src="{{ b.book.cover_image.url }}" style="width: 70px; height: 100px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            {% else %}
+                                <div style="width: 70px; height: 100px; background: #eee; font-size: 0.7rem; text-align: center; display: flex; align-items: center; justify-content: center;">Нет фото</div>
+                            {% endif %}
+                        </a>
+                        <div>
+                            <a href="{% url 'library:book_detail' b.book.id %}?next=profile" style="text-decoration:none; color:#3e2723; font-weight: bold; font-size: 1rem;">
+                                {{ b.book.title }}
+                            </a>
+                            <!-- ISBN удален -->
+                        </div>
+                    </div>
+                </td>
+
+            <!-- 3. Статус -->
+            <td>
+                <span class="badge {% if b.status == 'completed' %}success{% elif b.status == 'pending' or b.status == 'approved' %}active{% else %}error{% endif %}">
+                    {{ b.get_status_display }}
+                </span>
+                {% if b.rejection_type %}<br><small style="color: #c0392b;">Причина: {{ b.rejection_type.name }}</small>{% endif %}
+                {% if b.reject_comment %}<br><small style="color: #666; font-style:italic;">💬 {{ b.reject_comment }}</small>{% endif %}
+            </td>
+
+            <!-- 4. Действия (без прочерков) -->
+            <td>
+                {% if b.status == 'pending' or b.status == 'approved' %}
+                    <form action="{% url 'library:cancel_booking' b.id %}" method="POST" onsubmit="return confirm('Вы уверены, что хотите отменить бронь?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-booking" style="background: #c0392b; padding: 10px 15px; font-size: 0.9rem;">
+                            Отменить
+                        </button>
+                    </form>
+                {% endif %}
+                <!-- Если кнопки нет, ничего не пишем (пустота) -->
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align: center; padding: 30px; color: #999;">У вас пока нет заявок.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+    </div>
+{% endif %}
+
+       {% if user.role != 'reader' %}
+    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 5px solid #8d6e63;">
+        <h3>ℹ Информация</h3>
+        <p>Используйте меню сверху для доступа к рабочим разделам:</p>
+        <ul>
+            <!-- Логика для БИБЛИОТЕКАРЯ -->
+            {% if user.role == 'librarian' %}
+                <li><strong>Новости:</strong> Публикация новостей на главной странице.</li>
+                <li><strong>Каталог:</strong> Работа с каталогом и справочниками книг</li>
+                <li><strong>Бронирование:</strong> Работа с заявками на бронь.</li>
+                <li><strong>Отчеты:</strong> Формирование аналитических отчетов.</li>
+                <li><strong>Читатели:</strong> Управление читателями.</li>
+
+
+            <!-- Логика для АДМИНИСТРАТОРА -->
+            {% elif user.role == 'admin' %}
+                <li><strong>Новости:</strong> Публикация новостей на главной странице.</li>
+                <li><strong>Отчеты:</strong> Формирование аналитических отчетов.</li>
+                <li><strong>Пользователи:</strong> Управление аккаунтами персонала.</li>
+                <li><strong>Настройки:</strong> Изменение информации о библиотеке.</li>
+            {% endif %}
+        </ul>
+    </div>
+{% endif %}
+    </div>
+
+    <!-- === ВКЛАДКА 2: НАСТРОЙКИ === -->
+    <div id="content-settings" style="display: {% if active_tab == 'settings' %}block{% else %}none{% endif %};">
+        <div style="max-width: 700px; margin-left: 0;">
+            <div class="admin-news-panel" style="background: white; border: 1px solid #d7ccc8; border-left: 5px solid #8d6e63; padding: 25px; margin-bottom: 30px;">
+                <h3 style="margin-top: 0; color: #3e2723;">✏️ Основная информация</h3>
+
+                {% if user.role == 'librarian' %}
+                    <p style="color: #888; font-size: 0.85rem; margin-bottom: 20px;">* Для изменения ФИО к обратитесь администратору. Контактные данные вы можете изменить самостоятельно.</p>
+                {% elif user.role == 'reader' %}
+                    <!-- ИСПРАВЛЕНО: Теперь читателю советуем обратиться к библиотекарю -->
+                    <p style="color: #888; font-size: 0.85rem; margin-bottom: 20px;">* Для изменения ФИО обратитесь к <strong>библиотекарю</strong>. Контактные данные вы можете изменить самостоятельно.</p>
+                {% endif %}
+
+                <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_profile">
+
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label>Фамилия:</label>
+                        <input type="text" name="last_name" value="{{ user.last_name }}" class="form-input" {% if user.role != 'admin' %}readonly style="background:#f9f9f9; color: #888;"{% endif %}>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label>Имя:</label>
+                        <input type="text" name="first_name" value="{{ user.first_name }}" class="form-input" {% if user.role != 'admin' %}readonly style="background:#f9f9f9; color: #888;"{% endif %}>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label>Отчество:</label>
+                        <input type="text" name="middle_name" value="{{ user.middle_name|default:'' }}" class="form-input" {% if user.role != 'admin' %}readonly style="background:#f9f9f9; color: #888;"{% endif %}>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                         <label>Логин:</label>
+    <input type="text" name="username" value="{{ user.username }}" class="form-input"
+           readonly style="background:#f9f9f9; color: #888; border: 1px solid #eee;">
+    <small style="color: #888; font-size: 0.8rem;">Логин нельзя изменить.</small>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label>Телефон:</label>
+                       <input type="text" name="phone" value="{{ user.phone|default:'' }}" class="form-input" placeholder="+7xxxxxxxxxx" maxlength="12">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label>Электронная почта:</label>
+                        <input type="email" name="email" value="{{ user.email }}" class="form-input" placeholder="example@mail.ru">
+                    </div>
+                       {% if user.role == 'reader' %}
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px; padding: 10px; background: #fdfbf7; border-radius: 4px;">
+        <input type="checkbox" name="is_subscribed" id="id_is_subscribed"
+               {% if user.reader_profile.is_subscribed %}checked{% endif %}
+               style="width: 18px; height: 18px;">
+        <label for="id_is_subscribed" style="margin: 0; cursor: pointer; font-weight: 600; color: #5d4037;">
+            Я хочу получать e-mail уведомления о статусе моих броней
+        </label>
+    </div>
+    {% endif %}
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                        <button type="submit" class="btn-booking" style="background-color: #27ae60; padding: 10px 30px;">Сохранить данные</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="admin-news-panel" style="background: white; border: 1px solid #d7ccc8; border-left: 5px solid #d84315; padding: 25px;">
+                <h3 style="margin-top: 0; color: #3e2723;">🔐 Смена пароля</h3>
+                <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="change_password">
+                    <div><label>Текущий пароль:</label><input type="password" name="old_password" required class="form-input"></div>
+                    <div><label>Новый пароль:</label><input type="password" name="new_password" required class="form-input"></div>
+                    <div><label>Подтвердите новый пароль:</label><input type="password" name="confirm_password" required class="form-input"></div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                        <button type="submit" class="btn-booking" style="background-color: #27ae60; padding: 10px 30px;">Обновить пароль</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(tab) {
+    const dashContent = document.getElementById('content-dashboard');
+    const setContent = document.getElementById('content-settings');
+    const dashTab = document.getElementById('tab-dashboard');
+    const setTab = document.getElementById('tab-settings');
+
+    if (tab === 'settings') {
+        dashContent.style.display = 'none';
+        setContent.style.display = 'block';
+        setTab.style.borderBottom = '3px solid #4e342e';
+        setTab.style.color = '#4e342e';
+        setTab.style.fontWeight = 'bold';
+        dashTab.style.borderBottom = 'none';
+        dashTab.style.color = '#8d6e63';
+        dashTab.style.fontWeight = 'normal';
+    } else {
+        dashContent.style.display = 'block';
+        setContent.style.display = 'none';
+        dashTab.style.borderBottom = '3px solid #4e342e';
+        dashTab.style.color = '#4e342e';
+        dashTab.style.fontWeight = 'bold';
+        setTab.style.borderBottom = 'none';
+        setTab.style.color = '#8d6e63';
+        setTab.style.fontWeight = 'normal';
+    }
+}
+</script>
 {% endblock %}

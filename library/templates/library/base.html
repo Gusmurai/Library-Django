@@ -4,11 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Библиотека онлайн{% endblock %}</title>
-<!--    <link rel="stylesheet" href="{% static 'css/style.css' %}">-->
-    <!-- Добавили ?v=2 в конец -->
-<!-- Добавили ?v=2 в конец -->
-<link rel="stylesheet" href="{% static 'css/style.css' %}?v=5">
+    <!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- jQuery (нужен для Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <title>{% block title %}Сервис бронирования{% endblock %}</title>
+    <!-- Подключаем CSS с версионностью для обновления кэша -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=19">
 </head>
 <body>
 
@@ -16,55 +20,94 @@
     <header class="app-header">
         <div class="logo">📚 Библиотека</div>
         <nav style="display: flex; align-items: center;">
-            <a href="/">Новости</a>
-            <a href="/about/">О нас</a>
-            <a href="/catalog/">Каталог</a>
-            <a href="/contacts/">Контакты</a>
+            <a href="{% url 'library:news' %}">Новости</a>
+            <a href="{% url 'library:about' %}">О нас</a>
+            <a href="{% url 'library:catalog' %}">Каталог</a>
+            <a href="{% url 'library:contacts' %}">Контакты</a>
 
             <!-- Проверка: Авторизован ли пользователь? -->
             {% if user.is_authenticated %}
 
-                <!-- Если это сотрудник, показываем доп. меню -->
+                <!-- Блок для сотрудников (Библиотекарь и Админ) -->
                 {% if user.role == 'librarian' or user.role == 'admin' %}
-                    <a href="/librarian/">Бронирование</a>
-                    <a href="/admin_panel/">{% if user.role == 'librarian' %}Читатели{% else %}Пользователи{% endif %}</a>
+                    <a href="{% url 'library:librarian' %}">Бронирование</a>
+                    <a href="{% url 'library:reports_list' %}">Отчеты</a>
+
+                    <!-- Динамическое название ссылки управления пользователями -->
+                    <a href="{% url 'library:admin_panel' %}">
+                        {% if user.role == 'librarian' %}Читатели{% else %}Пользователи{% endif %}
+                    </a>
                 {% endif %}
 
-                <!-- Профиль и кнопка выхода -->
-                <a href="/profile/" style="color: #f1c40f; font-weight: bold;">
-                    🧑 {{ user.first_name }} {{ user.last_name }}
-                </a>
-                <form action="/logout/" method="post" style="display:inline;">
+                <!-- Блок только для Администратора -->
+                {% if user.role == 'admin' %}
+                    <a href="{% url 'library:settings' %}">⚙ Настройки</a>
+                {% endif %}
+
+                <!-- Профиль пользователя с золотистой иконкой -->
+             <!-- Профиль пользователя с иконкой и полным ФИО -->
+        <a href="{% url 'library:profile' %}" style="margin-left: 20px; color: #f1c40f; font-weight: bold; display: flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap;">
+            <!-- Золотистая SVG иконка -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+
+            <!-- Вывод ФИО -->
+            <span>
+                {{ user.last_name }} {{ user.first_name }}
+                {% if user.middle_name %}{{ user.middle_name }}{% endif %}
+            </span>
+        </a>
+
+                <form action="{% url 'library:logout' %}" method="post" style="display:inline; margin-left: 15px;">
                     {% csrf_token %}
-                    <button type="submit" class="login-btn" style="cursor: pointer;">Выйти</button>
+                    <button type="submit" class="login-btn">Выйти</button>
                 </form>
 
             {% else %}
-                <!-- Если гость, показываем кнопку Войти -->
-                <a href="/login/" class="login-btn">Войти</a>
+                <!-- Если гость -->
+                <a href="{% url 'library:login' %}" class="login-btn">Войти</a>
             {% endif %}
         </nav>
     </header>
 
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main>
-        {% if messages %}
+       {% if messages %}
             <div class="messages" style="margin-bottom: 20px;">
                 {% for message in messages %}
-                    <div style="padding: 10px; background-color: #d5f5e3; color: #27ae60; border-radius: 4px; border: 1px solid #27ae60;">
+                    <!-- Динамический стиль в зависимости от типа сообщения -->
+                    <div style="padding: 12px 15px; border-radius: 4px; margin-bottom: 10px; font-weight: 500;
+                        {% if message.tags == 'error' %}
+                            background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2;
+                        {% elif message.tags == 'success' %}
+                            background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;
+                        {% else %}
+                            background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;
+                        {% endif %}
+                    ">
+                        {% if message.tags == 'error' %}⚠️ {% elif message.tags == 'success' %}✅ {% else %}ℹ️ {% endif %}
                         {{ message }}
                     </div>
                 {% endfor %}
             </div>
         {% endif %}
-
         {% block content %}
         {% endblock %}
     </main>
 
     <!-- ПОДВАЛ САЙТА -->
     <footer class="app-footer">
-        <p>&copy; 2026 Городская библиотека. Все права защищены.</p>
+        <p>{{ lib_info.name|default:"Городская библиотека" }}</p>
+
+        {% if lib_info %}
+        <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">
+            <span>📍 {{ lib_info.address }}</span>
+            <span style="margin: 0 10px;">|</span>
+            <span>📞 {{ lib_info.phone }}</span>
+        </div>
+        {% endif %}
     </footer>
 
 </body>

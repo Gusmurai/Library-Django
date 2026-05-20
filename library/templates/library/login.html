@@ -32,18 +32,12 @@
 
 
         <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 5px; color: #5d4037; font-weight: 500; font-size: 0.95rem;">Пароль:</label>
-
-            <input
-                type="password"
-                name="password"
-                required
-                style="width: 100%; padding: 10px 12px; border: 1px solid #bcaaa4; border-radius: 4px; box-sizing: border-box; font-size: 1rem; background-color: #fff; color: #3e2723; outline: none; transition: border-color 0.3s;"
-                onfocus="this.style.borderColor='#8d6e63'; this.style.boxShadow='0 0 0 2px rgba(141, 110, 99, 0.2)'"
-                onblur="this.style.borderColor='#bcaaa4'; this.style.boxShadow='none'"
-            >
+            <label style="display: block; margin-bottom: 5px; color: #5d4037; font-weight: 500;">Пароль:</label>
+            <input type="password" name="password" required class="form-input">
+            <a href="{% url 'password_reset' %}" style="font-size: 0.8rem; color: #8d6e63; text-decoration: none; margin-top: 5px; display: block;">
+                Забыли пароль?
+            </a>
         </div>
-
 
         <button type="submit" style="width: 100%; background-color: #558b2f; color: white; padding: 10px; border: none; border-radius: 4px; font-size: 1.05rem; font-weight: 500; cursor: pointer; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#33691e'" onmouseout="this.style.backgroundColor='#558b2f'">
             Войти

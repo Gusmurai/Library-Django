@@ -4,9 +4,23 @@
 
 {% block content %}
 <div style="margin-bottom: 20px;">
-    <a href="{% url 'library:catalog' %}" style="text-decoration: none; color: #8d6e63; font-weight: bold;">
-        &larr; Вернуться в каталог
-    </a>
+    {% if request.GET.next == 'librarian' %}
+        <a href="{% url 'library:librarian' %}?tab=active" style="text-decoration: none; color: #8d6e63; font-weight: bold;">
+            &larr; Вернуться к активным заявкам
+        </a>
+    {% elif request.GET.next == 'profile' %}
+        <a href="{% url 'library:profile' %}" style="text-decoration: none; color: #8d6e63; font-weight: bold;">
+            &larr; Вернуться в личный кабинет
+        </a>
+    {% elif request.GET.next == 'librarian_history' %}
+        <a href="{% url 'library:librarian' %}?tab=history" style="text-decoration: none; color: #8d6e63; font-weight: bold;">
+            &larr; Вернуться в историю операций
+        </a>
+    {% else %}
+        <a href="{% url 'library:catalog' %}" style="text-decoration: none; color: #8d6e63; font-weight: bold;">
+            &larr; Вернуться в каталог
+        </a>
+    {% endif %}
 </div>
 
 <div style="background: white; border-radius: 8px; border: 1px solid #d7ccc8; padding: 30px; display: flex; gap: 40px; flex-wrap: wrap; box-shadow: 0 4px 15px rgba(62,39,35,0.05);">
@@ -26,34 +40,29 @@
 
         <div style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 20px; color: #4e342e;">
 
-            <!-- Показываем автора только если он указан -->
             {% if book.authors.all %}
-                <p style="margin: 5px 0;"><strong>Автор(ы):</strong>
-                    {% for author in book.authors.all %}{{ author.last_name }} {{ author.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                <p style="margin: 5px 0;"><strong>Автор:</strong>
+                    {% for author in book.authors.all %}{{ author.last_name }} {{ author.first_name }} {{ author.middle_name|default:'' }}{% if not forloop.last %}, {% endif %}{% endfor %}
                 </p>
             {% endif %}
 
-            <!-- Показываем жанр только если он указан -->
             {% if book.genres.all %}
                 <p style="margin: 5px 0;"><strong>Жанр:</strong>
                     {% for genre in book.genres.all %}{{ genre.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                 </p>
             {% endif %}
 
-            <!-- Показываем издательство только если оно указано -->
             {% if book.publisher %}
                 <p style="margin: 5px 0;"><strong>Издательство:</strong> {{ book.publisher.name }}</p>
             {% endif %}
 
-            <!-- Показываем год издания только если он указан -->
             {% if book.publish_year %}
                 <p style="margin: 5px 0;"><strong>Год издания:</strong> {{ book.publish_year }}</p>
             {% endif %}
 
-            <!-- ISBN виден ТОЛЬКО администратору или библиотекарю (если поле заполнено) -->
             {% if user.role == 'admin' or user.role == 'librarian' %}
                 {% if book.isbn %}
-                    <p style="margin: 5px 0; color: #8d6e63; font-size: 0.95rem;"><strong>Служебный ISBN:</strong> {{ book.isbn }}</p>
+                    <p style="margin: 5px 0;"><strong>ISBN:</strong> {{ book.formatted_isbn }}</p>
                 {% endif %}
             {% endif %}
         </div>
@@ -61,12 +70,13 @@
         <h3 style="color: #5d4037; border-bottom: 1px solid #efebe9; padding-bottom: 5px;">Аннотация</h3>
         <p style="line-height: 1.6; color: #444; white-space: pre-wrap;">{{ book.description }}</p>
 
+        <!-- БЛОК ДЕЙСТВИЙ: Избранное + Бронирование -->
         <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f5f0ee;">
             {% if book.is_archived %}
                 <p style="color: #c62828; font-weight: bold;">Книга находится в архиве и недоступна для бронирования.</p>
             {% else %}
 
-                {% if book.issue_type == 'hall' %}
+                {% if book.issue_type == 'reading_room' %}
                     <div style="background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 12px; margin-bottom: 15px; border-radius: 4px;">
                         <strong>📙 Внимание:</strong> Данное издание доступно только для работы в читальном зале.
                     </div>
@@ -74,16 +84,33 @@
 
                 {% if user.is_authenticated %}
                     {% if user.role == 'reader' %}
-                        <form method="POST" action="{% url 'library:book_booking' book.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-booking">
-                                {% if book.issue_type == 'hall' %}Заказать в зал{% else %}Забронировать{% endif %}
-                            </button>
-                        </form>
-                    {% else %}
-                        <p style="color: #558b2f; font-weight: bold;">Вы вошли как сотрудник. Книга доступна в фонде.</p>
+                        <!-- Контейнер для кнопок -->
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+
+                            <!-- Кнопка Избранное (ссылка) -->
+                            <a href="{% url 'library:toggle_favorite' book.id %}"
+                               style="text-decoration: none; font-size: 1.8rem; transition: transform 0.2s;"
+                               title="{% if book.id in user_favorite_ids %}Удалить из избранного{% else %}Добавить в избранное{% endif %}"
+                               onmouseover="this.style.transform='scale(1.2)'"
+                               onmouseout="this.style.transform='scale(1)'">
+                                {% if book.id in user_favorite_ids %}❤️{% else %}🤍{% endif %}
+                            </a>
+
+                            <!-- Форма Бронирования -->
+                            <form method="POST" action="{% url 'library:book_booking' book.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-booking"
+                                    onclick="return confirm('{% if book.issue_type == 'reading_room' %}ВНИМАНИЕ: Данное издание доступно ТОЛЬКО для работы в читальном зале библиотеки и не выдается на дом. \n\n{% endif %}Подтверждаете бронирование этой книги? \n\nС момента одобрения заявки библиотекарем бронь будет действовать 3 дня.');">
+                                    {% if book.issue_type == 'reading_room' %}Забронировать книгу (читальный зал){% else %}Забронировать книгу{% endif %}
+                                </button>
+                            </form>
+                        </div>
+
+                    
                     {% endif %}
+
                 {% else %}
+                    <!-- Для неавторизованных -->
                     <div style="background-color: #f8f9fa; border: 1px dashed #d7ccc8; padding: 15px; border-radius: 4px; text-align: center;">
                         <p style="margin: 0; color: #6d4c41;">
                             <a href="{% url 'library:login' %}" style="color: #3498db; font-weight: bold; text-decoration: none;">Авторизуйтесь</a>

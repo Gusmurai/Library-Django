@@ -19,7 +19,7 @@
         {% if user.role == 'admin' or user.role == 'librarian' %}
             {% if item.author %}
                 <div style="margin-top: 12px; color: #8d6e63; font-size: 0.9rem; font-style: italic;">
-                    Автор публикации: {{ item.author.last_name }} {{ item.author.first_name }}
+                    Автор публикации: {{ item.author.last_name }} {{ item.author.first_name }} {{ item.author.middle_name|default:"" }}
                 </div>
             {% endif %}
         {% endif %}
