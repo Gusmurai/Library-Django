@@ -4,7 +4,6 @@
 <h1>Каталог книг</h1>
 
 
-<!-- === БЛОК ВКЛАДОК (ОБЪЕДИНЕННЫЙ) === -->
 <div style="display: flex; border-bottom: 2px solid #d7ccc8; margin-bottom: 25px; flex-wrap: wrap;">
     <!-- Вкладка "Каталог" видна ВСЕМ всегда -->
     <a href="?tab=books" style="padding: 10px 20px; text-decoration:none; {% if active_tab == 'books' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">📚 Каталог</a>
@@ -27,9 +26,8 @@
     {% endif %}
 </div>
 
-<!-- ============================================== -->
 <!-- ВКЛАДКА: КНИГИ И АРХИВ -->
-<!-- ============================================== -->
+
 {% if active_tab == 'books' or active_tab == 'favorites' or active_tab == 'archive' %}
 
     <!-- Кнопка добавления для библиотекаря -->
@@ -66,7 +64,7 @@
             <!-- КАРТОЧКА КНИГИ -->
             <div class="book-card" style="position: relative; {% if book.is_archived %}opacity: 0.8; border: 1px dashed #999; background: #f9f9f9;{% endif %}">
 
-                <!-- 1. ИКОНКА ИЗБРАННОГО (ТОЛЬКО ДЛЯ ЧИТАТЕЛЯ) -->
+                <!-- ИКОНКА ИЗБРАННОГО (ТОЛЬКО ДЛЯ ЧИТАТЕЛЯ) -->
                 {% if user.role == 'reader' and not book.is_archived %}
                     <a href="{% url 'library:toggle_favorite' book.id %}"
                        style="position: absolute; right: 10px; top: 10px; text-decoration: none; background: rgba(255,255,255,0.9); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"
@@ -103,7 +101,6 @@
                         <a href="{% url 'library:book_detail' book.id %}" class="btn-details">Подробнее</a>
                     </div>
                     <!-- КНОПКИ УПРАВЛЕНИЯ БИБЛИОТЕКАРЯ (Книга) -->
-                 <!-- КНОПКИ УПРАВЛЕНИЯ БИБЛИОТЕКАРЯ (Книга) -->
 {% if user.role == 'librarian' %}
     <div style="margin-top: 15px; border-top: 1px solid #efebe9; padding-top: 10px; display: flex; gap: 8px; align-items: stretch;">
 
@@ -134,9 +131,8 @@
         {% endfor %}
     </div>
 
-<!-- ============================================== -->
+
 <!-- ВКЛАДКА: АВТОРЫ -->
-<!-- ============================================== -->
 {% elif active_tab == 'authors' %}
     <div style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
 
@@ -204,9 +200,9 @@
         </div>
     </div>
 
-<!-- ============================================== -->
+
 <!-- ВКЛАДКА: ЖАНРЫ -->
-<!-- ============================================== -->
+
 {% elif active_tab == 'genres' %}
     <div style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
         <div style="flex: 2; min-width: 300px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8;">
@@ -263,9 +259,9 @@
             </form>
         </div>
 
-<!-- ============================================== -->
+
 <!-- ВКЛАДКА: ИЗДАТЕЛЬСТВА -->
-<!-- ============================================== -->
+
 {% elif active_tab == 'publishers' %}
     <div style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
         <div style="flex: 2; min-width: 300px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8;">
@@ -323,7 +319,6 @@
 {% endif %}
 
 <style>
-    /* Стилизуем автосгенерированные поля Django */
     form input[type="text"], form input[type="date"] {
         width: 100%;
         padding: 10px;

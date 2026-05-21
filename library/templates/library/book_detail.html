@@ -87,7 +87,7 @@
                         <!-- Контейнер для кнопок -->
                         <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
 
-                            <!-- Кнопка Избранное (ссылка) -->
+                            <!-- Кнопка Избранное -->
                             <a href="{% url 'library:toggle_favorite' book.id %}"
                                style="text-decoration: none; font-size: 1.8rem; transition: transform 0.2s;"
                                title="{% if book.id in user_favorite_ids %}Удалить из избранного{% else %}Добавить в избранное{% endif %}"

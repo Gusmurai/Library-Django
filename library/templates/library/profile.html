@@ -20,36 +20,36 @@
         </button>
     </div>
 
-    <!-- === ВКЛАДКА 1: ДАШБОРД === -->
+    <!-- ВКЛАДКА 1: ДАШБОРД -->
   <div id="content-dashboard" style="display: {% if active_tab == 'dashboard' %}block{% else %}none{% endif %};">
     {% if user.role == 'admin' %}
         <h2 style="margin-top: 0;">Статистика системы</h2>
         <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
-            <!-- 1. Пользователей (Синий) -->
+
             <div style="flex: 1; min-width: 180px; background: #d6eaf8; padding: 20px; border-radius: 8px; text-align: center; color: #2980b9; border: 1px solid #aed6f1;">
                 <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.total_users }}</h3><p style="color: #2980b9;">Пользователей</p>
             </div>
-            <!-- 2. Книг (Зелёный) -->
+
             <div style="flex: 1; min-width: 180px; background: #d5f5e3; padding: 20px; border-radius: 8px; text-align: center; color: #27ae60; border: 1px solid #abebc6;">
                 <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.total_books }}</h3><p style="color: #27ae60;">Книг в каталоге</p>
             </div>
-            <!-- 3. Активных (Жёлтый) -->
+
             <div style="flex: 1; min-width: 180px; background: #fcf3cf; padding: 20px; border-radius: 8px; text-align: center; color: #f39c12; border: 1px solid #f9e79f;">
                 <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.pending_bookings }}</h3><p style="color: #f39c12;">Активных заявок</p>
             </div>
-            <!-- 4. Завершено (Фиолетовый) -->
+
             <div style="flex: 1; min-width: 180px; background: #e8daef; padding: 20px; border-radius: 8px; text-align: center; color: #8e44ad; border: 1px solid #d2b4de;">
                 <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.completed_bookings }}</h3><p style="color: #8e44ad;">Завершено заявок</p>
             </div>
-            <!-- 5. Отклонены (Красный) -->
+
             <div style="flex: 1; min-width: 180px; background: #fadbd8; padding: 20px; border-radius: 8px; text-align: center; color: #c0392b; border: 1px solid #f5b7b1;">
                 <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.rejected_by_librarian }}</h3><p style="color: #c0392b;">Отклонены</p>
             </div>
-            <!-- 6. Отменены читателем (Розовый) -->
+
             <div style="flex: 1; min-width: 180px; background: #fce4ec; padding: 20px; border-radius: 8px; text-align: center; color: #c2185b; border: 1px solid #f8bbd0;">
                 <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.cancelled_by_reader }}</h3><p style="color: #c2185b;">Отменены читателем</p>
             </div>
-            <!-- 7. Истёкшие (Бирюзовый) -->
+
             <div style="flex: 1; min-width: 180px; background: #e0f2f1; padding: 20px; border-radius: 8px; text-align: center; color: #00695c; border: 1px solid #b2dfdb;">
                 <h3 style="margin: 0; font-size: 2rem;">{{ staff_stats.expired_bookings }}</h3><p style="color: #00695c;">Истёкшие заявки</p>
             </div>
@@ -77,7 +77,7 @@
             </div>
 
         {% else %}
-            <!-- Читатель -->
+
             <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
                 <div style="flex: 1; min-width: 180px; background: #fff3cd; padding: 20px; border-radius: 8px; text-align: center; color: #856404;">
                     <h3 style="margin: 0; font-size: 2rem;">{{ reader_stats.active }}</h3><p style="color: #856404;">Активные брони</p>
@@ -121,7 +121,7 @@
             <!-- 1. Дата заявки -->
             <td style="text-align: center;"><strong>{{ b.booking_date|date:"d.m.Y" }}</strong></td>
 
-            <!-- 2. Книга (Фото побольше + ISBN) -->
+            <!-- 2. Книга -->
             <td>
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <a href="{% url 'library:book_detail' b.book.id %}?next=profile">
@@ -196,7 +196,7 @@
 {% endif %}
     </div>
 
-    <!-- === ВКЛАДКА 2: НАСТРОЙКИ === -->
+    <!-- ВКЛАДКА 2: НАСТРОЙКИ-->
     <div id="content-settings" style="display: {% if active_tab == 'settings' %}block{% else %}none{% endif %};">
         <div style="max-width: 700px; margin-left: 0;">
             <div class="admin-news-panel" style="background: white; border: 1px solid #d7ccc8; border-left: 5px solid #8d6e63; padding: 25px; margin-bottom: 30px;">
@@ -205,7 +205,6 @@
                 {% if user.role == 'librarian' %}
                     <p style="color: #888; font-size: 0.85rem; margin-bottom: 20px;">* Для изменения ФИО к обратитесь администратору. Контактные данные вы можете изменить самостоятельно.</p>
                 {% elif user.role == 'reader' %}
-                    <!-- ИСПРАВЛЕНО: Теперь читателю советуем обратиться к библиотекарю -->
                     <p style="color: #888; font-size: 0.85rem; margin-bottom: 20px;">* Для изменения ФИО обратитесь к <strong>библиотекарю</strong>. Контактные данные вы можете изменить самостоятельно.</p>
                 {% endif %}
 

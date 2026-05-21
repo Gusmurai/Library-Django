@@ -11,7 +11,7 @@ body {
   min-height: 100vh;
 }
 
-/* Общий стиль для всех заголовков H1 (черта как в новостях) */
+/* Общий стиль для всех заголовков H1*/
 h1 {
   border-bottom: 2px solid #8d6e63;
   padding-bottom: 10px;
@@ -20,7 +20,7 @@ h1 {
   font-weight: bold;
 }
 
-/* === ШАПКА (HEADER) === */
+/* ШАПКА (HEADER)  */
 .app-header {
   background-color: #3e2723;
   color: #efebe9;
@@ -75,7 +75,6 @@ h1 {
   color: #3e2723 !important;
 }
 
-
 main {
   flex: 1;
   padding: 2rem;
@@ -84,7 +83,6 @@ main {
   width: 100%;
   box-sizing: border-box;
 }
-
 
 .app-footer {
   background-color: #3e2723;
@@ -95,7 +93,7 @@ main {
   border-top: 4px solid #8d6e63;
 }
 .app-footer span {
-    white-space: nowrap; /* Чтобы адрес или телефон не разрывались на две строки */
+    white-space: nowrap;
 }
 .book-grid {
   display: grid;
@@ -143,8 +141,8 @@ main {
 .book-footer {
  margin-top: auto;
   display: flex;
-  flex-direction: column; /* Кнопки в столбик */
-  gap: 10px;              /* Расстояние между ними */
+  flex-direction: column;
+  gap: 10px;
   padding-top: 15px;
   border-top: 1px solid #f5f0ee;
   width: 100%;
@@ -190,7 +188,7 @@ transform: scale(0.95);
 .book-footer .btn-details,
 .book-footer .btn-booking {
   display: flex;
-  width: 100% !important; /* Здесь они на всю ширину */
+  width: 100% !important;
   height: 40px;
   align-items: center;
   justify-content: center;
@@ -217,11 +215,10 @@ form .btn-details,
 form .btn-booking {
     flex: none !important;
     width: auto !important;
-    min-width: 100px; /* Минимальная ширина, чтобы текст не жался */
-}
+    min-width: 100px;
 
 a.btn-booking {
-    line-height: 1; /* Сбрасываем лишнюю высоту строки */
+    line-height: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -254,7 +251,7 @@ a.btn-booking {
 }
 
 .bookings-table th {
-    background-color: #6d4c41; /* Темная шапка как на фото */
+    background-color: #6d4c41;
     color: white;
     padding: 12px;
     text-align: left;
@@ -277,7 +274,6 @@ a.btn-booking {
 }
 
 
-/* Убеждаемся, что ВСЕ типы полей ввода в формах растягиваются на всю ширину */
 .form-input,
 input[type="text"],
 input[type="password"],
@@ -285,10 +281,10 @@ input[type="email"],
 input[type="number"],
 select,
 textarea {
-    width: 100% !important; /* Принудительно на всю ширину */
-    display: block;         /* Как отдельный блок */
-    box-sizing: border-box; /* Чтобы внутренние отступы не раздували поле */
-    height: 40px;           /* Единая высота для всех */
+    width: 100% !important;
+    display: block;
+    box-sizing: border-box;
+    height: 40px;
     padding: 8px 12px;
     border: 1px solid #d7ccc8;
     border-radius: 4px;
@@ -296,66 +292,59 @@ textarea {
     margin-bottom: 5px;
 }
 
-/* Выравниваем все элементы поиска и фильтров по одной линии */
 input[type="text"],
 select,
 button.btn-details,
 .btn-booking {
-    height: 40px;           /* Единая высота для всего */
-    padding: 0 15px;        /* Одинаковый внутренний отступ */
-    box-sizing: border-box; /* Чтобы рамка не увеличивала размер */
-    vertical-align: middle; /* Чтобы они стояли ровно в ряд */
-    font-size: 0.95rem;     /* Одинаковый размер шрифта */
-    margin: 0;              /* Убираем лишние зазоры */
-    line-height: 38px;      /* Центрируем текст внутри по вертикали */
+    height: 40px;
+    padding: 0 15px;
+    vertical-align: middle;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 38px;
 }
 
-/* Специфическая правка для кнопок, так как они иногда "сжимаются" */
+
 button.btn-details, .btn-booking {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: none;           /* Если у инпутов есть рамка, а у кнопки нет - она будет ниже на 2px */
+    border: none;
 }
 
-/* Если у инпутов есть рамка (например, 1px), кнопке тоже нужно её добавить,
-   даже если она прозрачная, чтобы высота была одинаковой: */
+
 button.btn-details {
     border: 1px solid transparent;
 }
 
-/* Исправление ширины и внешнего вида Select2 */
 .select2-container {
-    width: 100% !important; /* Заставляем контейнер растянуться */
+    width: 100% !important;
     display: block;
 }
 
 .select2-container--default .select2-selection--single,
 .select2-container--default .select2-selection--multiple {
-    border: 1px solid #d7ccc8 !important; /* Наш цвет рамки */
+    border: 1px solid #d7ccc8 !important;
     border-radius: 4px !important;
-    min-height: 40px !important; /* Единая высота */
+    min-height: 40px !important;
     padding: 2px 5px !important;
 }
 
-/* Центрируем текст в одиночном выборе (Издательство) */
 .select2-container--default .select2-selection--single .select2-selection__rendered {
     line-height: 34px !important;
     color: #3e2723 !important;
 }
 
-/* Сдвигаем стрелочку вниз */
 .select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 38px !important;
 }
 
-/* Цвет при фокусе */
 .select2-container--default.select2-container--focus .select2-selection--multiple,
 .select2-container--default.select2-container--focus .select2-selection--single {
     border-color: #8d6e63 !important;
     outline: none;
 }
-/* Базовый контейнер для всех форм авторизации */
+
 .auth-form-container {
     max-width: 450px;
     margin: 50px auto;
@@ -366,14 +355,12 @@ button.btn-details {
     box-shadow: 0 4px 15px rgba(62,39,35,0.05);
 }
 
-/* Форма в столбик */
 .auth-form {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-/* Поля ввода внутри форм */
 .auth-form input {
     width: 100%;
     padding: 10px;
@@ -383,7 +370,6 @@ button.btn-details {
     font-size: 1rem;
 }
 
-/* Кнопка на всю ширину */
 .btn-full {
     width: 100% !important;
     box-sizing: border-box;

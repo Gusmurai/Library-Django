@@ -6,4 +6,4 @@ class LibraryConfig(AppConfig):
     name = 'library'
 
     def ready(self):
-        import library.signals  # Добавляем эту строку
+        import library.signals

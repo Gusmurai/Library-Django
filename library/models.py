@@ -251,7 +251,6 @@ class LibraryInfo(models.Model):
 # library/models.py
 
 class Favorite(models.Model):
-    # Теперь привязываем строго к Читателю (Reader)
     reader = models.ForeignKey(Reader, on_delete=models.CASCADE, related_name='favorites', verbose_name='Читатель')
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='favored_by', verbose_name='Книга')
 
