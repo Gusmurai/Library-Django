@@ -1,0 +1,207 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Редактирование: {{ edit_user.username }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;" xmlns:align-items="http://www.w3.org/1999/xhtml"
+     xmlns:align-items="http://www.w3.org/1999/xhtml">
+    <a href="{% url 'library:admin_panel' %}" style="text-decoration: none; color: #8d6e63; font-weight: bold;">
+        &larr; Назад к списку
+    </a>
+</div>
+
+<div style="max-width: 700px; background: white; padding: 30px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <h2 style="margin-top: 0; color: #3e2723; border-bottom: 2px solid #efebe9; padding-bottom: 15px; margin-bottom: 25px;">
+        ✎ Редактирование: {{ edit_user.last_name }} {{ edit_user.first_name }} {{ edit_user.middle_name|default:'' }}
+    </h2>
+
+    <form method="POST">
+        {% csrf_token %}
+         <input type="hidden" name="update_profile" value="1">
+        <!-- ОБЩИЕ ОШИБКИ ФОРМЫ -->
+        {% if form.non_field_errors %}
+            <div style="background: #ffebee; color: #c62828; padding: 12px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #ffcdd2; font-weight: 500;">
+                {% for error in form.non_field_errors %}
+                    <div>⚠️ {{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- ОБЩИЙ БЛОК ВСЕХ ОШИБОК -->
+        {% if form.errors %}
+            <div style="background: #ffebee; color: #c62828; padding: 12px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #ffcdd2;">
+                <strong>⚠️ Исправьте ошибки:</strong>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ field }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+
+            <div>
+                <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">Фамилия:</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                    <div style="color: #c62828; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">{{ form.last_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">Имя:</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                    <div style="color: #c62828; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">{{ form.first_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">Отчество (необязательно):</label>
+                {{ form.middle_name }}
+                {% if form.middle_name.errors %}
+                    <div style="color: #c62828; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">{{ form.middle_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #efebe9; margin: 10px 0;">
+
+            <div>
+    <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">
+        Логин
+        <span style="font-weight: normal; color: #8d6e63; font-size: 0.9rem;">(неизменяемое поле)</span>:
+    </label>
+    {{ form.username }}
+    {% if form.username.help_text %}
+        <div style="color: #8d6e63; font-size: 0.8rem; margin-top: 4px;">
+            💡 {{ form.username.help_text }}
+        </div>
+    {% endif %}
+    {% if form.username.errors %}
+        <div style="color: #c62828; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">
+            {{ form.username.errors.0 }}
+        </div>
+    {% endif %}
+</div>
+            <div>
+                <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">Электронная почта (необязательно):</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div style="color: #c62828; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">Телефон (необязательно):</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                     <div style="color: #c62828; font-size: 0.8rem; margin-top: 5px; font-weight: 500;">{{ form.phone.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            {% if user.role == 'admin' %}
+            <div>
+                <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">Роль пользователя:</label>
+                {{ form.role }}
+                {% if form.role.errors %}
+                    <div style="color: #c62828; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">{{ form.role.errors.0 }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                {{ form.is_active }}
+                <label style="margin: 0; cursor: pointer; font-weight: 600; color: #5d4037;">Активен (разрешить вход на сайт)</label>
+            </div>
+
+          {% if edit_user.role == 'reader' %}
+            <div style="background: #fdfbf7; padding: 20px; border-radius: 6px; border: 1px solid #efebe9; margin-top: 10px;">
+                <h4 style="margin-top: 0; color: #8d6e63; margin-bottom: 15px;">Данные читательского билета</h4>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: 600; color: #5d4037; display: block; margin-bottom: 5px;">
+                        Номер билета
+                        <span style="font-weight: normal; color: #8d6e63; font-size: 0.9rem;">(неизменяемое поле):</span>
+                    </label>
+
+                    <!-- Используем widget с атрибутами для readonly -->
+                    <input type="text" name="ticket_number" value="{{ form.ticket_number.value|default:'' }}"
+                           readonly style="background:#f0f0f0; cursor:not-allowed; opacity:0.8; width:100%; padding:10px; border:1px solid #d7ccc8; border-radius:4px; box-sizing:border-box;">
+
+                    {% if form.ticket_number.errors %}
+                        <div style="color: #c62828; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">
+                            {{ form.ticket_number.errors.0 }}
+                        </div>
+                    {% endif %}
+
+                    <div style="color: #8d6e63; font-size: 0.8rem; margin-top: 4px; font-style: italic;">
+                        🔒 Номер билета создаётся при регистрации и не может быть изменён
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" name="is_subscribed" id="id_is_subscribed" {% if form.is_subscribed.value %}checked{% endif %} style="width: 18px; height: 18px;">
+                    <label for="id_is_subscribed" style="margin: 0; cursor: pointer;">Подписка на уведомления</label>
+                </div>
+            </div>
+        {% endif %}
+
+   <div style="margin-top: 20px;">
+        <button type="submit" class="btn-booking" style="background: #27ae60; padding: 12px 40px; font-weight: bold; border-radius: 4px; border: none; color: white; cursor: pointer; font-size: 1rem;">
+            Сохранить изменения
+        </button>
+    </div>
+</form>
+
+ <div style="background: white; padding: 30px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 30px;">
+    <h3 style="color: #c0392b; margin-top: 0;">🔑 Сброс пароля</h3>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="change_password" value="1">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div>
+                <label>Новый пароль:</label>
+                <input type="password" name="new_password" class="form-input" required>
+            </div>
+            <div>
+                <label>Подтверждение:</label>
+                <input type="password" name="confirm_password" class="form-input" required>
+            </div>
+            <button type="submit" class="btn-booking" style="background: #c0392b; margin-top: 10px; border:none; cursor:pointer; color:white; padding:10px;">Сменить пароль</button>
+        </div>
+    </form>
+</div>
+
+
+<style>
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d7ccc8;
+        border-radius: 4px;
+        box-sizing: border-box;
+        margin-top: 2px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    input:focus, select:focus {
+        border-color: #8d6e63;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(141, 110, 99, 0.1);
+    }
+    input[readonly] {
+    background: #f5f5f5 !important;
+    color: #666 !important;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+     label { font-weight: 600; color: #5d4037; font-size: 0.9rem; }
+</style>
+</style>
+{% endblock %}

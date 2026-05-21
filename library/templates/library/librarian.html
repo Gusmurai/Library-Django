@@ -1,0 +1,282 @@
+{% extends 'library/base.html' %}
+{% block title %}Бронирование{% endblock %}
+{% block content %}
+<h1>Управление бронированием</h1>
+
+<div style="display: flex; border-bottom: 2px solid #d7ccc8; margin-bottom: 25px;">
+    <a href="?tab=active" style="padding: 10px 25px; text-decoration:none; {% if active_tab == 'active' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">🔥 Активные заявки ({{ active_bookings.count }})</a>
+    <a href="?tab=history" style="padding: 10px 25px; text-decoration:none; {% if active_tab == 'history' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">📒 История операций</a>
+    {% if user.role == 'librarian' %}
+        <a href="?tab=reasons" style="padding: 10px 25px; text-decoration:none; {% if active_tab == 'reasons' %}border-bottom:3px solid #4e342e; font-weight:bold; color:#4e342e;{% else %}color:#8d6e63;{% endif %}">🚫 Причины отказов</a>
+    {% endif %}
+</div>
+
+
+<!-- ВКЛАДКА 1: АКТИВНЫЕ ЗАЯВКИ -->
+
+{% if active_tab == 'active' %}
+    <form method="GET" style="display: flex; gap: 10px; margin-bottom: 25px; align-items: center; flex-wrap: wrap;">
+        <input type="hidden" name="tab" value="active">
+        <input type="text" name="q" placeholder="🔍 Поиск (Читатель, Книга, Билет)..." value="{{ q|default:'' }}" style="flex: 3; height: 40px;">
+        <select name="status" style="flex: 1; height: 40px;">
+            <option value="all">Статус: Все</option>
+            <option value="pending" {% if status_val == 'pending' %}selected{% endif %}>На рассмотрении</option>
+            <option value="approved" {% if status_val == 'approved' %}selected{% endif %}>Одобрена</option>
+        </select>
+        <button type="submit" class="btn-details" style="height: 40px;">Применить</button>
+    </form>
+
+    <table class="bookings-table">
+        <thead style="background: #4e342e; color: white;">
+            <tr>
+                <th style="width: 120px;">Дата и время</th>
+                <th>Читатель / Контакты</th>
+                <th>Книга</th>
+                <th>Статус</th>
+                {% if user.role == 'librarian' %}<th>Действия</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in active_bookings %}
+            <tr>
+                <td style="text-align: center;">
+                    <strong>{{ b.booking_date|date:"d.m.Y" }}</strong><br>
+                    <small style="color: #8d6e63;">{{ b.booking_date|date:"H:i" }}</small>
+                </td>
+                <td>
+
+                    <strong>{{ b.reader.user.last_name }} {{ b.reader.user.first_name }} {{ b.reader.user.middle_name|default:'' }}</strong><br>
+                    <small style="display: block; margin-top: 2px;">Билет: {{ b.reader.ticket_number }}</small>
+                    <small style="display: block; margin-top: 2px;">📞 {{ b.reader.user.phone|default:"—" }}</small>
+                    <small style="display: block; margin-top: 2px;">✉️ {{ b.reader.user.email|default:"—" }}</small>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <a href="{% url 'library:book_detail' b.book.id %}?next=librarian">
+                            {% if b.book.cover_image %}
+                                <img src="{{ b.book.cover_image.url }}" style="width: 60px; height: 85px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            {% else %}
+                                <div style="width: 60px; height: 85px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">Нет фото</div>
+                            {% endif %}
+                        </a>
+                        <div>
+                            <a href="{% url 'library:book_detail' b.book.id %}?next=librarian" style="text-decoration:none; color:#3e2723; font-weight: bold;">
+                                {{ b.book.title }}
+                            </a>
+                            {% if b.book.isbn %}<br><small style="color: #8d6e63;">ISBN: {{ b.book.formatted_isbn }}</small>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge {% if b.status == 'pending' %}active{% else %}success{% endif %}">{{ b.get_status_display }}</span></td>
+                {% if user.role == 'librarian' %}
+                <td>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        {% if b.status == 'pending' %}
+                            <button onclick="openModal('approve', {{ b.id }})" class="btn-action" style="background: #27ae60;">Одобрить</button>
+                            <button onclick="openModal('reject', {{ b.id }})" class="btn-action" style="background: #c0392b;">Отказ</button>
+                        {% elif b.status == 'approved' %}
+                            <a href="{% url 'library:process_booking' b.id 'complete' %}" class="btn-action" style="background: #2980b9; text-decoration: none; text-align: center;">Завершить</a>
+                        {% endif %}
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<!-- ВКЛАДКА 2: ИСТОРИЯ ОПЕРАЦИЙ -->
+
+{% elif active_tab == 'history' %}
+    <!-- Поиск без рамки и фона -->
+    <form method="GET" style="display: flex; gap: 10px; margin-bottom: 25px; align-items: center; flex-wrap: wrap;">
+        <input type="hidden" name="tab" value="history">
+
+        <input type="text" name="q" placeholder="🔍 Поиск (Читатель, Книга, Билет)..." value="{{ q|default:'' }}" style="flex: 2; height: 40px; min-width: 200px;">
+
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="font-size: 0.9rem; color: #5d4037;">Период с:</span>
+            <input type="date" name="start_date" value="{{ request.GET.start_date }}" style="height: 40px; padding: 0 5px; border: 1px solid #d7ccc8; border-radius: 4px;">
+            <span style="font-size: 0.9rem; color: #5d4037;">по:</span>
+            <input type="date" name="end_date" value="{{ request.GET.end_date }}" style="height: 40px; padding: 0 5px; border: 1px solid #d7ccc8; border-radius: 4px;">
+        </div>
+
+        <select name="status" style="flex: 1; height: 40px;">
+            <option value="all">Результат: Все</option>
+            <option value="completed" {% if status_val == 'completed' %}selected{% endif %}>Завершена</option>
+            <option value="rejected" {% if status_val == 'rejected' %}selected{% endif %}>Отклонена</option>
+            <option value="expired" {% if status_val == 'expired' %}selected{% endif %}>Истекла</option>
+            <option value="cancelled" {% if status_val == 'cancelled' %}selected{% endif %}>Отменена</option>
+        </select>
+
+        <!-- Фильтр: ФИО сотрудников полностью -->
+        <select name="staff" style="flex: 1; height: 40px;">
+            <option value="all">Сотрудник: Все</option>
+            {% for s in staff_list %}
+                <option value="{{ s.username }}" {% if staff_val == s.username %}selected{% endif %}>
+                    {{ s.last_name }} {{ s.first_name }} {{ s.middle_name|default:'' }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn-details" style="height: 40px; padding: 0 15px;">Применить</button>
+    </form>
+
+    <table class="bookings-table">
+        <thead style="background: #f8f9fa;">
+            <tr>
+                <th style="width: 120px;">Дата и время</th>
+                <th>Читатель / Контакты</th>
+                <th>Книга</th>
+                <th>Результат / Комментарий</th>
+                <th>Кем обработано</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in history_bookings %}
+            <tr>
+                <td style="text-align: center;">
+                    <strong>{{ b.status_change_date|date:"d.m.Y" }}</strong><br>
+                    <small style="color: #8d6e63;">{{ b.status_change_date|date:"H:i" }}</small>
+                </td>
+                <td>
+                    <!-- Данные читателя строго в столбик -->
+                    <strong>{{ b.reader.user.last_name }} {{ b.reader.user.first_name }} {{ b.reader.user.middle_name|default:'' }}</strong><br>
+                    <small style="display: block; margin-top: 2px;">Билет: {{ b.reader.ticket_number }}</small>
+                    <small style="display: block; margin-top: 2px;">📞 {{ b.reader.user.phone|default:"—" }}</small>
+                    <small style="display: block; margin-top: 2px;">✉️ {{ b.reader.user.email|default:"—" }}</small>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        {% if b.book.cover_image %}<img src="{{ b.book.cover_image.url }}" style="width: 60px; height: 85px; object-fit: cover; border-radius: 4px;">{% endif %}
+                        <div>
+                            <a href="{% url 'library:book_detail' b.book.id %}?next=librarian_history" style="text-decoration:none; color:inherit; font-size:0.9rem; font-weight: 500;">{{ b.book.title }}</a>
+                            {% if b.book.isbn %}<br><small style="color: #8d6e63;">ISBN: {{ b.book.formatted_isbn }}</small>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge {% if b.status == 'completed' %}success{% else %}error{% endif %}">{{ b.get_status_display }}</span>
+                    {% if b.rejection_type %}<br><small style="color: #c0392b;">{{ b.rejection_type.name }}</small>{% endif %}
+                    {% if b.reject_comment %}<br><small style="color: #666; font-style:italic;">💬 {{ b.reject_comment }}</small>{% endif %}
+                </td>
+                <td>
+                    {% if b.librarian %}
+                        <!-- ФИО сотрудника обычным шрифтом (не жирным) -->
+                        <span style="font-size: 0.9rem;">
+                            👤 {{ b.librarian.last_name }} {{ b.librarian.first_name }} {{ b.librarian.middle_name|default:'' }}
+                        </span>
+                    {% else %}<span style="color: #ccc;">—</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<!-- ВКЛАДКА 3: ПРИЧИНЫ ОТКАЗОВ -->
+
+{% elif active_tab == 'reasons' %}
+    <div style="display: flex; gap: 30px; align-items: flex-start;">
+        <div style="flex: 2; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8;">
+            <h3>Справочник причин отказа</h3>
+            <table class="bookings-table">
+                <thead><tr><th>Причина</th><th>Действия</th></tr></thead>
+                <tbody>
+                    {% for r in reasons %}
+                    <tr>
+                        <td>{{ r.name }}</td>
+                        <td style="width: 100px;">
+                            <div style="display: flex; gap: 5px;">
+                                <a href="{% url 'library:edit_dict_item' 'reason' r.id %}" class="btn-action" style="background:#f39c12; text-decoration:none; padding: 5px 10px;">✎</a>
+                                <form method="POST" action="{% url 'library:delete_dict_item' 'reason' r.id %}" onsubmit="return confirm('Удалить эту причину?');" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action" style="background: #c0392b; border:none; padding: 5px 10px;">🗑</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="flex: 1; min-width: 300px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: #3e2723;">➕ Добавить причину</h3>
+            <form method="POST" style="width: 100%; display: flex; flex-direction: column;">
+                {% csrf_token %}
+                <input type="hidden" name="add_reason" value="1">
+                <div style="margin-bottom: 15px; width: 100%;">
+                    <label style="display: block; margin-bottom: 8px; color: #5d4037; font-weight: 600; font-size: 0.9rem;">{{ reason_form.name.label }}:</label>
+                    {{ reason_form.name }}
+                    {% if reason_form.name.errors %}<div style="color: #c62828; font-size: 0.85rem; margin-top: 5px;">{{ reason_form.name.errors.0 }}</div>{% endif %}
+                </div>
+                <button type="submit" class="btn-booking" style="width: 100%; background: #27ae60; height: 45px; display: flex; align-items: center; justify-content: center; font-weight: 700; border: none; cursor: pointer; color: white; border-radius: 4px;">
+                    Сохранить
+                </button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+<!-- МОДАЛЬНЫЕ ОКНА (ДЛЯ ОДОБРЕНИЯ / ОТКАЗА) -->
+<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
+    <!-- Окно одобрения -->
+    <div id="approveForm" style="display:none; background:white; padding:30px; border-radius:8px; width:450px; border-left: 8px solid #27ae60;">
+        <h3 style="margin-top:0; color: #27ae60;">✅ Подтверждение брони</h3>
+        <form id="approveSubmitForm" method="POST">
+            {% csrf_token %}
+            <label style="display:block; margin-bottom:10px; font-weight:600; color: #3e2723;">Комментарий для читателя:</label>
+            <textarea name="staff_comment" placeholder="Текст уведомления..." style="width:100%; height:100px; padding:10px; box-sizing:border-box; border:1px solid #d7ccc8; border-radius:4px; margin-bottom:20px; font-family:inherit;"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-booking" style="background:#27ae60; flex:2; height: 40px;">Одобрить заявку</button>
+                <button type="button" onclick="closeModal()" class="btn-details" style="background:#95a5a6; flex:1; height: 40px;">Отмена</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Окно отказа -->
+    <div id="rejectForm" style="display:none; background:white; padding:30px; border-radius:8px; width:450px; border-left: 8px solid #c0392b;">
+        <h3 style="margin-top:0; color: #c0392b;">❌ Отказ в бронировании</h3>
+        <form id="rejectSubmitForm" method="POST">
+            {% csrf_token %}
+            <label style="display:block; margin-bottom:8px; font-weight:600; color: #3e2723;">Выберите причину:</label>
+            <select name="reason" required style="width:100%; height:40px; margin-bottom:15px; border:1px solid #d7ccc8; border-radius:4px; padding: 0 10px;">
+                <option value="">Выберите причину из справочника</option>
+                {% for r in reasons %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+            </select>
+            <label style="display:block; margin-bottom:8px; font-weight:600; color: #3e2723;">Комментарий для читателя:</label>
+            <textarea name="staff_comment" placeholder="Текст уведомления..." style="width:100%; height:80px; padding:10px; box-sizing:border-box; border:1px solid #d7ccc8; border-radius:4px; margin-bottom:20px; font-family:inherit;"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-booking" style="background:#c0392b; flex:2; height: 40px;">Отклонить заявку</button>
+                <button type="button" onclick="closeModal()" class="btn-details" style="background:#95a5a6; flex:1; height: 40px;">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openModal(type, id) {
+    const overlay = document.getElementById('modalOverlay');
+    const approve = document.getElementById('approveForm');
+    const reject = document.getElementById('rejectForm');
+    overlay.style.display = 'flex';
+    if (type === 'approve') {
+        approve.style.display = 'block';
+        reject.style.display = 'none';
+        document.getElementById('approveSubmitForm').action = "/librarian/process/" + id + "/approve/";
+    } else {
+        approve.style.display = 'none';
+        reject.style.display = 'block';
+        document.getElementById('rejectSubmitForm').action = "/librarian/process/" + id + "/reject/";
+    }
+}
+function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+window.onclick = function(event) { if (event.target == document.getElementById('modalOverlay')) closeModal(); }
+</script>
+
+<style>
+    .bookings-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 10px; }
+    .bookings-table th, .bookings-table td { padding: 15px; border-bottom: 1px solid #efebe9; text-align: left; vertical-align: middle; }
+    .form-input, select { padding: 8px 12px; border: 1px solid #d7ccc8; border-radius: 4px; box-sizing: border-box; }
+</style>
+{% endblock %}

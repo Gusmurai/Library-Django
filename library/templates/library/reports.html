@@ -1,0 +1,106 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Отчеты и аналитика{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <h1>Отчеты и аналитика</h1>
+
+    <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-top: 30px;">
+
+        <!-- СЕКЦИЯ АДМИНИСТРАТОРА -->
+        {% if user.role == 'admin' %}
+        <!-- Убрали border-left и добавили border для аккуратности -->
+        <div class="admin-news-panel" style="flex: 1; min-width: 400px; border-left: none !important; border: 1px solid #d7ccc8; background: white;">
+            <h3 style="color: #2c3e50; text-align: center;">📊 Аналитические отчеты (Администратор)</h3>
+            <p style="font-size: 1rem; color: #666; margin-bottom: 25px; text-align: center;">Глобальные сводки по состоянию системы и эффективности сотрудников.</p>
+
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Текст на кнопках теперь по центру (text-align: center) -->
+                <a href="{% url 'library:report_system_stats' %}" class="btn-details" style="background: #27ae60; text-align: center;">
+                    📉 Статистика системы (сводная)
+                </a>
+                <a href="{% url 'library:report_top_books' %}" class="btn-details" style="background: #27ae60; text-align: center;">
+                    📈 Рейтинг востребованности литературы
+                </a>
+                <a href="{% url 'library:report_staff_activity' %}" class="btn-details" style="background: #27ae60; text-align: center;">
+                    👥 Отчет по активности персонала
+                </a>
+                <a href="{% url 'library:report_rejections' %}" class="btn-details" style="background: #27ae60; text-align: center;">
+                    ⚠️ Анализ причин отказов
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- СЕКЦИЯ БИБЛИОТЕКАРЯ -->
+        {% if user.role == 'librarian' %}
+        <!-- Убрали border-left и добавили border -->
+        <div class="admin-news-panel" style="flex: 1; min-width: 400px; border-left: none !important; border: 1px solid #d7ccc8; background: white;">
+            <h3 style="color: #2c3e50; text-align: center;">📋 Операционные отчеты (Библиотекарь)</h3>
+            <p style="font-size: 1rem; color: #666; margin-bottom: 25px; text-align: center;">Формирование списков и выписок для ежедневной работы.</p>
+
+            <div style="margin-bottom: 30px;">
+                <a href="{% url 'library:report_available_books' %}" class="btn-booking" style="background: #27ae60; display: block; padding: 15px 25px; text-align: center;">
+                    📥 Скачать полный перечень фонда
+                </a>
+            </div>
+
+            <div style="margin-bottom: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <strong style="display: block; margin-bottom: 15px; font-size: 1.1rem; text-align: center;">Бронирования за период:</strong>
+                <form method="GET" action="{% url 'library:report_booked_period' %}" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.9rem; color:#666;">Начало:</label>
+                            <input type="date" name="start_date" class="form-input" required style="height: 45px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.9rem; color:#666;">Конец:</label>
+                            <input type="date" name="end_date" class="form-input" required style="height: 45px;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-booking" style="background: #27ae60; padding: 15px; text-align: center;">📥 Получить перечень</button>
+                </form>
+            </div>
+
+            <div style="padding-top: 20px; border-top: 1px solid #eee;">
+                <strong style="display: block; margin-bottom: 15px; font-size: 1.1rem; text-align: center;">Выписка по пользователю:</strong>
+                <form method="GET" action="{% url 'library:report_user_history' %}" style="display: flex; flex-direction: column; gap: 15px;">
+                    <select name="ticket" class="form-input" required style="height: 45px; font-size: 1rem;">
+                        <option value="">Выберите читателя из списка...</option>
+                        {% for r in readers %}
+                            <option value="{{ r.ticket_number }}">Билет {{ r.ticket_number }} — {{ r.user.last_name }} {{ r.user.first_name }} {{ r.user.middle_name|default:'' }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn-booking" style="background: #27ae60; padding: 15px; text-align: center;">📥 Скачать историю читателя</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<style>
+    .btn-details, .btn-booking {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        padding: 14px 20px !important;
+        border-radius: 6px !important;
+        transition: 0.3s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Центрирование текста внутри кнопки */
+        text-align: center;
+    }
+    .btn-details:hover, .btn-booking:hover {
+        filter: brightness(90%);
+        transform: translateY(-2px);
+    }
+    /* Сброс стандартной полосы, если она есть в CSS */
+    .admin-news-panel {
+        border-left: none !important;
+    }
+</style>
+{% endblock %}

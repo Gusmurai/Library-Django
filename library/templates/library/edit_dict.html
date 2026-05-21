@@ -1,0 +1,46 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Редактирование справочника{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="{{ base_url }}?tab={{ tab }}" style="text-decoration: none; color: #8d6e63; font-weight: bold;">
+        &larr; Назад к справочнику
+    </a>
+</div>
+
+<div style="max-width: 500px; background: white; padding: 30px; border-radius: 8px; border: 1px solid #d7ccc8; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <h2 style="margin-top: 0; color: #3e2723;">✎ Редактирование записи</h2>
+
+    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #5d4037; font-weight: 500;">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                    <div style="color: #c62828; font-size: 0.8rem; margin-top: 5px;">{{ field.errors.0 }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <!-- Ошибка уникальности -->
+        {% if form.non_field_errors %}
+            <div style="color: #c62828; font-weight: bold;">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
+
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="submit" class="btn-booking" style="flex: 2; background: #27ae60; padding: 12px;">Сохранить изменения</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    form input[type="text"], form input[type="date"] {
+        width: 100%; padding: 10px; border: 1px solid #d7ccc8; border-radius: 4px; box-sizing: border-box; font-family: inherit; font-size: 1rem;
+    }
+</style>
+{% endblock %}

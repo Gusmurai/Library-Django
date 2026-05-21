@@ -1,0 +1,200 @@
+{% extends 'library/base.html' %}
+{% block title %}Пользователи{% endblock %}
+{% block content %}
+
+<h1>{% if user.role == 'admin' %}Управление пользователями{% else %}Управление читателями{% endif %}</h1>
+
+
+<div style="margin-bottom: 20px;">
+    <button onclick="toggleForm()" class="btn-booking" style="background: #27ae60; border: none; padding: 10px 20px;">
+        {% if user.role == 'admin' %}➕ Добавить пользователя{% else %}➕ Зарегистрировать читателя{% endif %}
+    </button>
+</div>
+
+<div id="addUserForm" style="{% if form.errors %}display: block;{% else %}display: none;{% endif %} background: white; padding: 25px; border-radius: 8px; border: 1px solid #d7ccc8; margin-bottom: 30px; max-width: 500px;">
+    <h3 style="margin-top: 0; color: #3e2723;">Новая учетная запись</h3>
+
+    {% if form.errors %}
+        <div style="background: #ffebee; color: #c62828; padding: 12px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #ffcdd2; font-size: 0.9rem;">
+            <strong>⚠️ Исправьте ошибки:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ field }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div style="background: #ffebee; color: #c62828; padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #ffcdd2; font-size: 0.9rem;">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+        {% csrf_token %}
+        <input type="hidden" name="add_user" value="1">
+
+        <!-- Фамилия -->
+        <div>
+            <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">Фамилия:</label>
+            <input type="text" name="last_name" placeholder="Введите фамилию" value="{{ form.last_name.value|default:'' }}" required class="form-input">
+            {% if form.last_name.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.last_name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div>
+            <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">Имя:</label>
+            <input type="text" name="first_name" placeholder="Введите имя" value="{{ form.first_name.value|default:'' }}" required class="form-input">
+            {% if form.first_name.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.first_name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div>
+            <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">Отчество (необязательно):</label>
+            <input type="text" name="middle_name" placeholder="Введите отчество" value="{{ form.middle_name.value|default:'' }}" class="form-input">
+            {% if form.middle_name.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.middle_name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div>
+            <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">Логин:</label>
+            <input type="text" name="username" placeholder="Придумайте уникальный логин" value="{{ form.username.value|default:'' }}" required class="form-input">
+            {% if form.username.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.username.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div>
+            <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">Пароль:</label>
+            <input type="password" name="password" placeholder="Введите сложный пароль" required class="form-input" style="width: 100%; box-sizing: border-box;">
+            {% if form.password.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.password.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div>
+            <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">E-mail (необязательно):</label>
+            <input type="email" name="email" placeholder="example@mail.ru" value="{{ form.email.value|default:'' }}" class="form-input">
+            {% if form.email.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.email.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div>
+            <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">Телефон (необязательно):</label>
+            <input type="text" name="phone" placeholder="+7xxxxxxxxxx" value="{{ form.phone.value|default:'' }}" class="form-input" maxlength="12">
+            {% if form.phone.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.phone.errors.0 }}</div>{% endif %}
+        </div>
+
+        {% if user.role == 'librarian' %}
+            <div>
+                <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600;">Номер читательского билета:</label>
+                <input type="text" name="ticket_number" placeholder="Введите номер билета" value="{{ form.ticket_number.value|default:'' }}" required class="form-input">
+                {% if form.ticket_number.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.ticket_number.errors.0 }}</div>{% endif %}
+            </div>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #5d4037; font-size: 0.95rem;">
+                <input type="checkbox" name="is_subscribed" style="width: 18px; height: 18px;" {% if form.is_subscribed.value %}checked{% endif %}>
+                Подписать на e-mail уведомления
+            </label>
+            <input type="hidden" name="role" value="reader">
+        {% else %}
+            <div>
+                <label style="font-size: 0.85rem; color: #5d4037; font-weight: 600; margin-bottom: 5px; display: block;">Роль пользователя:</label>
+                <select name="role" class="form-input" style="width: 100%; box-sizing: border-box; height: 40px;">
+                    <option value="librarian" {% if form.role.value == 'librarian' %}selected{% endif %}>Библиотекарь</option>
+                    <option value="admin" {% if form.role.value == 'admin' %}selected{% endif %}>Администратор</option>
+                </select>
+                {% if form.role.errors %}<div style="color: #c62828; font-size: 0.8rem; margin-top: 4px;">{{ form.role.errors.0 }}</div>{% endif %}
+            </div>
+        {% endif %}
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="submit" class="btn-booking" style="flex: 2; background: #27ae60;">Сохранить</button>
+            <button type="button" onclick="toggleForm()" class="btn-details" style="flex: 1; background: #95a5a6;">Отмена</button>
+        </div>
+    </form>
+</div>
+
+<!-- ПОИСК И ФИЛЬТРЫ -->
+<form method="GET" style="display: flex; gap: 10px; margin-bottom: 25px; align-items: center; flex-wrap: wrap;">
+    <input type="hidden" name="tab" value="{{ active_tab }}">
+
+    <input type="text" name="q"
+           placeholder="{% if user.role == 'librarian' %}🔍 Поиск по ФИО, Билету...{% else %}🔍 Поиск по ФИО...{% endif %}"
+           value="{{ q|default:'' }}" style="flex: 2; height: 40px; box-sizing: border-box;">
+
+    <select name="status" style="flex: 1; height: 40px;">
+        <option value="all">Все статусы</option>
+        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Активные</option>
+        <option value="blocked" {% if request.GET.status == 'blocked' %}selected{% endif %}>Заблокированные</option>
+    </select>
+
+    {% if user.role == 'admin' %}
+    <select name="role_filter" style="flex: 1; height: 40px;">
+        <option value="all">Все пользователи</option>
+        <option value="librarian" {% if request.GET.role_filter == 'librarian' %}selected{% endif %}>Библиотекари</option>
+        <option value="admin" {% if request.GET.role_filter == 'admin' %}selected{% endif %}>Администраторы</option>
+    </select>
+    {% endif %}
+
+    <button type="submit" class="btn-details" style="height: 40px;">Применить</button>
+</form>
+
+<!-- ТАБЛИЦА -->
+<table class="bookings-table">
+    <thead>
+        <tr>
+            <th>ФИО</th>
+            <th>{% if user.role == 'librarian' %}Билет / Логин / Контакты{% else %}Логин / Контакты{% endif %}</th>
+            {% if user.role == 'admin' %}<th>Пользователь</th>{% endif %}
+            <th>Статус</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in users_list %}
+        <tr style="{% if not u.is_active %}background: #fafafa; opacity: 0.8;{% endif %}">
+            <td><strong>{{ u.last_name }} {{ u.first_name }} {{ u.middle_name|default:'' }}</strong></td>
+            <td>
+                {% if u.role == 'reader' and u.reader_profile %}
+                    <span>Билет: №{{ u.reader_profile.ticket_number }}</span><br>
+                {% endif %}
+
+                <span title="Логин">🆔 {{ u.username }}</span><br>
+                {% if u.phone %}<small style="color: #8d6e63;">📞 {{ u.phone }}</small><br>{% endif %}
+                {% if u.email %}<small style="color: #3498db;">✉️ {{ u.email }}</small>{% endif %}
+            </td>
+
+            {% if user.role == 'admin' %}
+                <td>{{ u.get_role_display }}</td>
+            {% endif %}
+
+            <td>
+                {% if u.is_active %}
+                    <span class="badge success">Активен</span>
+                {% else %}
+                    <span class="badge error">Заблокирован</span>
+                {% endif %}
+            </td>
+            <td>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{% url 'library:edit_user' u.username %}" class="btn-action" style="background: #f39c12; text-decoration: none; display: flex; align-items: center; justify-content: center;">✎</a>
+                    <form action="{% url 'library:toggle_user' u.username %}" method="POST" style="margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action" style="background: {% if u.is_active %}#c62828{% else %}#558b2f{% endif %}; border:none;">
+                            {% if u.is_active %}🔒{% else %}🔓{% endif %}
+                        </button>
+                    </form>
+
+
+
+                </div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align: center; padding: 20px;">Пользователи не найдены</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function toggleForm() {
+    var form = document.getElementById("addUserForm");
+    form.style.display = (form.style.display === "none") ? "block" : "none";
+}
+</script>
+{% endblock %}
